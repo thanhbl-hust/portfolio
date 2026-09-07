@@ -96,6 +96,28 @@ a:hover {
   min-height: 100vh;
 }
 
+.brand {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: var(--color-accent);
+}
+
+.brand__icon {
+  color: var(--color-accent);
+}
+
 .topnav {
   position: fixed;
   bottom: 1.5rem;
@@ -201,32 +223,6 @@ a:hover {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   cursor: pointer;
-}
-
-.rss-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--color-border);
-  color: var(--color-ink-soft);
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.rss-link:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.rss-link svg {
-  width: 15px;
-  height: 15px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
 }
 
 .theme-toggle__icon {
@@ -642,8 +638,12 @@ a:hover {
     font-size: 0.85rem;
   }
 
+  .brand {
+    font-size: 0.8rem;
+  }
+
   .content {
-    padding: 2rem 1.25rem 6rem;
+    padding: 4rem 1.25rem 6rem;
   }
 
   .article__title {
