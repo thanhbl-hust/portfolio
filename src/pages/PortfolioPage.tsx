@@ -2,8 +2,8 @@ export function PortfolioPage() {
   return (
     <article className="article">
       <header className="article__header">
-        <h1 className="article__title">Your Name</h1>
-        <p className="article__subtitle">DevOps Engineer &middot; Backend Developer</p>
+        <h1 className="article__title">Bui Lam Thanh</h1>
+        <p className="article__subtitle">DevOps Engineer</p>
       </header>
 
       <div className="article__body">
@@ -37,7 +37,7 @@ export function PortfolioPage() {
 
         <h2 id="experience">Experience</h2>
         <p>
-          <strong>Senior DevOps Engineer</strong> &mdash; Company Name (2023 &ndash; Present)
+          <strong>Senior  Engineer</strong> &mdash; Company Name (2023 &ndash; Present)
           <br />
           One line on scope and impact.
         </p>
@@ -50,12 +50,12 @@ export function PortfolioPage() {
         <h2 id="contact">Contact / Links</h2>
         <ul>
           <li>
-            Email: <a href="mailto:you@example.com">you@example.com</a>
+            Email: <a href="mailto:lamthanhbui02@gmail.com">lamthanhbui02@gmail.com</a>
           </li>
           <li>
             GitHub:{' '}
-            <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer">
-              github.com/yourusername
+            <a href="https://github.com/thanhbl-hust" target="_blank" rel="noopener noreferrer">
+              github.com/thanhbl-hust
             </a>
           </li>
           <li>

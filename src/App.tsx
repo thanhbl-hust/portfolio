@@ -1,9 +1,22 @@
 import { useEffect, useState } from 'react'
-import { HashRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
+import { ScrollProgress } from './components/ScrollProgress'
+import { ThemeToggle } from './components/ThemeToggle'
 import { PortfolioPage } from './pages/PortfolioPage'
 import { ArticlePage } from './pages/ArticlePage'
 import { articles } from './content'
+
+// Scroll position doesn't reset automatically on client-side navigation,
+// which would leave a new (differently sized) page landing mid-scroll and
+// the progress bar showing a stale percentage.
+function ScrollToTopOnNavigate() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -17,6 +30,9 @@ export default function App() {
 
   return (
     <HashRouter>
+      <ScrollToTopOnNavigate />
+      <ScrollProgress />
+      <ThemeToggle />
       <div className="layout">
         <button
           type="button"

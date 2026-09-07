@@ -18,6 +18,22 @@
   color-scheme: light;
 }
 
+/* Code blocks keep the same cool dark navy in both themes - a constant
+   "terminal" anchor, so --color-code-bg/fg are intentionally not
+   overridden below. */
+:root[data-theme='dark'] {
+  --color-bg: #17140f;
+  --color-bg-raised: #221f18;
+  --color-ink: #ece6d6;
+  --color-ink-soft: #b3ab93;
+  --color-border: #3a352a;
+  --color-accent: #7db0f2;
+  --color-accent-soft: #24344a;
+  --color-quote-bar: #c9a227;
+
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -54,6 +70,25 @@ a:hover {
 
 ::selection {
   background: var(--color-accent-soft);
+}
+
+/* ---------- scroll progress ---------- */
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 50;
+  background: transparent;
+}
+
+.scroll-progress__bar {
+  height: 100%;
+  background: var(--color-accent);
+  width: 0%;
+  transition: width 0.12s ease-out;
 }
 
 /* ---------- layout ---------- */
@@ -137,9 +172,60 @@ a:hover {
   margin-left: var(--sidebar-width);
   flex: 1;
   min-width: 0;
-  padding: 3rem 2rem 6rem;
+  padding: 3.75rem 2rem 6rem;
   display: flex;
   justify-content: center;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 52px;
+  height: 28px;
+  padding: 0 5px;
+  background: var(--color-bg-raised);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.theme-toggle__icon {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--color-ink-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.theme-toggle__icon--moon {
+  fill: var(--color-ink-soft);
+  stroke: none;
+}
+
+.theme-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-ink-soft);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle[aria-checked='true'] .theme-toggle__knob {
+  transform: translateX(24px);
 }
 
 .article {
