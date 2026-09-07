@@ -1,11 +1,14 @@
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { AboutTerminal } from '../components/AboutTerminal'
+import { PeopleScene } from '../components/PeopleScene'
 
 export function PortfolioPage() {
   useDocumentTitle('Bui Lam Thanh')
 
   return (
     <article className="article">
+      <PeopleScene />
+
       <AboutTerminal />
 
       <div className="article__body">

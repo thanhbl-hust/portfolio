@@ -455,6 +455,17 @@ a:hover {
   background: rgba(128, 128, 128, 0.3);
 }
 
+.scene3d {
+  width: 100%;
+  height: 360px;
+  margin: 0 0 2rem;
+  cursor: grab;
+}
+
+.scene3d:active {
+  cursor: grabbing;
+}
+
 .terminal {
   position: relative;
   margin: 0 0 2rem;
