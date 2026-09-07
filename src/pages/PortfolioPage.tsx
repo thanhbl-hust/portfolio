@@ -1,41 +1,12 @@
-import { useEffect, useState } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { AboutTerminal } from '../components/AboutTerminal'
 
 export function PortfolioPage() {
-  const [avatarOpen, setAvatarOpen] = useState(false)
   useDocumentTitle('Bui Lam Thanh')
-
-  useEffect(() => {
-    if (!avatarOpen) return
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setAvatarOpen(false)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [avatarOpen])
 
   return (
     <article className="article">
-      <header className="article__header portfolio__header">
-        <button
-          type="button"
-          className="portfolio__avatar-button"
-          onClick={() => setAvatarOpen(true)}
-          aria-label="View larger photo"
-        >
-          <img src="avatar.jpg" alt="Bui Lam Thanh" className="portfolio__avatar" />
-        </button>
-        <div>
-          <h1 className="article__title">Bui Lam Thanh</h1>
-          <p className="article__subtitle">DevOps Engineer</p>
-        </div>
-      </header>
-
-      {avatarOpen && (
-        <div className="lightbox" onClick={() => setAvatarOpen(false)}>
-          <img src="avatar.jpg" alt="Bui Lam Thanh" className="lightbox__image" />
-        </div>
-      )}
+      <AboutTerminal />
 
       <div className="article__body">
         <h2 id="about">About Me</h2>
