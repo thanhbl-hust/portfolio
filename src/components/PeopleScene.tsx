@@ -1,5 +1,45 @@
+import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei'
+import { Quaternion, Vector3 } from 'three'
+
+function Pickleball({ position }: { position: [number, number, number] }) {
+  const radius = 0.055
+  const holeCount = 26
+
+  const holes = useMemo(() => {
+    const up = new Vector3(0, 1, 0)
+    const points: { position: [number, number, number]; quaternion: Quaternion }[] = []
+    const golden = Math.PI * (3 - Math.sqrt(5))
+
+    for (let i = 0; i < holeCount; i++) {
+      const y = 1 - (i / (holeCount - 1)) * 2
+      const r = Math.sqrt(Math.max(0, 1 - y * y))
+      const theta = golden * i
+      const normal = new Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r)
+      points.push({
+        position: [normal.x * radius * 1.02, normal.y * radius * 1.02, normal.z * radius * 1.02],
+        quaternion: new Quaternion().setFromUnitVectors(up, normal),
+      })
+    }
+    return points
+  }, [])
+
+  return (
+    <group position={position}>
+      <mesh castShadow>
+        <sphereGeometry args={[radius, 24, 24]} />
+        <meshStandardMaterial color="#e8e13a" roughness={0.5} />
+      </mesh>
+      {holes.map((hole, i) => (
+        <mesh key={i} position={hole.position} quaternion={hole.quaternion}>
+          <cylinderGeometry args={[0.009, 0.009, 0.005, 8]} />
+          <meshStandardMaterial color="#8f8a1e" />
+        </mesh>
+      ))}
+    </group>
+  )
+}
 
 function PickleballPaddle({
   position,
@@ -161,6 +201,8 @@ export function PeopleScene() {
           outfitAccent="#c85c76"
           isFemale
         />
+
+        <Pickleball position={[-0.05, 1.2, 0.28]} />
 
         <ContactShadows position={[0, 0, 0]} opacity={0.45} scale={4} blur={2.4} far={2} />
 
