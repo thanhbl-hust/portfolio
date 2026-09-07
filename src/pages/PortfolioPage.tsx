@@ -1,0 +1,71 @@
+export function PortfolioPage() {
+  return (
+    <article className="article">
+      <header className="article__header">
+        <h1 className="article__title">Your Name</h1>
+        <p className="article__subtitle">DevOps Engineer &middot; Backend Developer</p>
+      </header>
+
+      <div className="article__body">
+        <h2 id="about">About Me</h2>
+        <p>
+          Replace this paragraph with a short introduction: who you are, what you work on day to
+          day, and what this site is for. Two or three sentences is plenty &mdash; the articles do
+          the rest of the talking.
+        </p>
+
+        <h2 id="skills">Skills</h2>
+        <ul>
+          <li>Languages: Go, Python, TypeScript</li>
+          <li>Infrastructure: Kubernetes, Docker, Terraform</li>
+          <li>CI/CD: GitLab CI, GitHub Actions, Jenkins</li>
+          <li>Cloud: AWS, GCP</li>
+        </ul>
+
+        <h2 id="projects">Projects</h2>
+        <h3 id="project-one">Project One</h3>
+        <p>
+          One paragraph describing the project, the problem it solved, and the stack used.{' '}
+          <a href="https://example.com" target="_blank" rel="noopener noreferrer">
+            Link to repo or demo
+          </a>
+          .
+        </p>
+
+        <h3 id="project-two">Project Two</h3>
+        <p>Same format as above &mdash; keep each project short and scannable.</p>
+
+        <h2 id="experience">Experience</h2>
+        <p>
+          <strong>Senior DevOps Engineer</strong> &mdash; Company Name (2023 &ndash; Present)
+          <br />
+          One line on scope and impact.
+        </p>
+        <p>
+          <strong>DevOps Engineer</strong> &mdash; Company Name (2020 &ndash; 2023)
+          <br />
+          One line on scope and impact.
+        </p>
+
+        <h2 id="contact">Contact / Links</h2>
+        <ul>
+          <li>
+            Email: <a href="mailto:you@example.com">you@example.com</a>
+          </li>
+          <li>
+            GitHub:{' '}
+            <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer">
+              github.com/yourusername
+            </a>
+          </li>
+          <li>
+            LinkedIn:{' '}
+            <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer">
+              linkedin.com/in/yourusername
+            </a>
+          </li>
+        </ul>
+      </div>
+    </article>
+  )
+}
