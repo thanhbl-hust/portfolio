@@ -1,6 +1,7 @@
 ---
 title: "Kubernetes Basics: Pods, Deployments, Services"
 date: "2026-08-20"
+tag: "Kubernetes"
 ---
 
 ## Architecture Overview

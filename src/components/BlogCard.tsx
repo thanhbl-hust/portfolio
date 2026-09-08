@@ -15,7 +15,10 @@ interface BlogCardProps {
 export function BlogCard({ article }: BlogCardProps) {
   return (
     <Link to={`/article/${article.slug}`} className="blog-card">
-      {article.date && <span className="blog-card__date">{formatDate(article.date)}</span>}
+      <div className="blog-card__meta">
+        {article.date && <span className="blog-card__date">{formatDate(article.date)}</span>}
+        {article.tag && <span className="tag-pill">{article.tag}</span>}
+      </div>
       <h2 className="blog-card__title">{article.title}</h2>
       {article.excerpt && <p className="blog-card__excerpt">{article.excerpt}</p>}
     </Link>

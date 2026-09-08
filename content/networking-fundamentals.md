@@ -1,6 +1,7 @@
 ---
 title: "Networking Fundamentals for Backend Engineers"
 date: "2026-07-02"
+tag: "Networking"
 ---
 
 ## Why Networking Still Matters

@@ -2,6 +2,7 @@ export interface Article {
   slug: string
   title: string
   date: string
+  tag: string
   excerpt: string
   body: string
 }
@@ -96,26 +97,35 @@ export const articles: Article[] = Object.entries(rawModules)
       slug,
       title: data.title ?? titleFromBody(body) ?? slug,
       date: data.date ?? '',
+      tag: data.tag ?? '',
       excerpt: extractExcerpt(body),
       body,
     }
   })
-  .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : a.title.localeCompare(b.title)))
+  .sort((a, b) => a.tag.localeCompare(b.tag) || a.title.localeCompare(b.title))
 
 export function getArticle(slug: string): Article | undefined {
   return articles.find((article) => article.slug === slug)
 }
 
-/** Picks the next `count` articles after the given one (by list order),
- * wrapping around to the start of the list so there's always something to
- * suggest regardless of where the current article sits. */
-export function getSuggestedArticles(slug: string, count = 2): Article[] {
-  const currentIndex = articles.findIndex((article) => article.slug === slug)
-  if (currentIndex === -1 || articles.length <= 1) return []
-
-  const suggestions: Article[] = []
-  for (let offset = 1; suggestions.length < count && offset < articles.length; offset += 1) {
-    suggestions.push(articles[(currentIndex + offset) % articles.length])
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items]
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
   }
-  return suggestions
+  return copy
+}
+
+/** Suggests other articles to read next: same-tag articles first (shuffled),
+ * topped up with random picks from the rest if there aren't enough. */
+export function getSuggestedArticles(slug: string, count = 2): Article[] {
+  const current = getArticle(slug)
+  if (!current) return []
+
+  const others = articles.filter((article) => article.slug !== slug)
+  const sameTag = current.tag ? others.filter((article) => article.tag === current.tag) : []
+  const rest = others.filter((article) => !sameTag.includes(article))
+
+  return [...shuffle(sameTag), ...shuffle(rest)].slice(0, count)
 }

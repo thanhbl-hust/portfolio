@@ -3,7 +3,7 @@ import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { PillNav } from './components/PillNav'
 import { Brand } from './components/Brand'
 import { ScrollProgress } from './components/ScrollProgress'
-import { ThemeToggle } from './components/ThemeToggle'
+import { TopControls } from './components/TopControls'
 import { BackToTop } from './components/BackToTop'
 import { PortfolioPage } from './pages/PortfolioPage'
 import { BlogsPage } from './pages/BlogsPage'
@@ -26,6 +26,7 @@ export default function App() {
       <ScrollToTopOnNavigate />
       <ScrollProgress />
       <Brand />
+      <TopControls />
       <BackToTop />
       <div className="page">
         <main className="content">
@@ -38,7 +39,6 @@ export default function App() {
 
         <footer className="topnav">
           <PillNav />
-          <ThemeToggle />
         </footer>
       </div>
     </HashRouter>

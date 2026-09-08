@@ -1,6 +1,7 @@
 ---
 title: "Understanding CI/CD Inconsistency"
 date: "2026-09-07"
+tag: "CI/CD"
 ---
 
 ## Introduction

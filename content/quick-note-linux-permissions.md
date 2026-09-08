@@ -1,6 +1,7 @@
 ---
 title: "Quick Note: chmod Octal Cheatsheet"
 date: "2026-06-11"
+tag: "Linux"
 ---
 
 Just a short reference I keep forgetting and looking up, so writing it down here.
