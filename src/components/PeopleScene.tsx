@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { ContactShadows, OrbitControls, RoundedBox } from '@react-three/drei'
+import { ContactShadows, OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
 import { Quaternion, Vector3 } from 'three'
+
+const OUTLINE_COLOR = '#15130f'
 
 function Pickleball({ position }: { position: [number, number, number] }) {
   const radius = 0.055
@@ -28,8 +30,9 @@ function Pickleball({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
       <mesh castShadow>
-        <sphereGeometry args={[radius, 24, 24]} />
+        <sphereGeometry args={[radius, 32, 32]} />
         <meshStandardMaterial color="#e8e13a" roughness={0.5} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.0025} />
       </mesh>
       {holes.map((hole, i) => (
         <mesh key={i} position={hole.position} quaternion={hole.quaternion}>
@@ -65,6 +68,7 @@ function PickleballPaddle({
       <mesh position={[0, 0.115, 0]} castShadow>
         <cylinderGeometry args={[0.036, 0.04, 0.2, 16]} />
         <meshStandardMaterial color={gripColor} roughness={0.85} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.003} />
       </mesh>
 
       {/* grip wrap rings */}
@@ -84,11 +88,13 @@ function PickleballPaddle({
       {/* edge guard (bumper) */}
       <RoundedBox args={[0.34, 0.42, 0.05]} radius={0.045} smoothness={4} position={[0, 0.475, 0]} castShadow>
         <meshStandardMaterial color={guardColor} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.003} />
       </RoundedBox>
 
       {/* paddle face - proud of the bumper on both sides */}
       <RoundedBox args={[0.29, 0.36, 0.026]} radius={0.03} smoothness={4} position={[0, 0.475, 0.025]} castShadow>
         <meshStandardMaterial color={faceColor} roughness={0.6} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.002} />
       </RoundedBox>
       <RoundedBox args={[0.29, 0.36, 0.026]} radius={0.03} smoothness={4} position={[0, 0.475, -0.025]} castShadow>
         <meshStandardMaterial color={faceColor} roughness={0.6} />
@@ -128,16 +134,19 @@ function BlockyPerson({ position, skin, hair, outfit, outfitAccent, isFemale, ho
         <mesh position={[0, 0.4, 0]} castShadow>
           <coneGeometry args={[0.42, 0.8, 4]} />
           <meshStandardMaterial color={outfit} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.006} />
         </mesh>
       ) : (
         <>
           <mesh position={[-0.16, 0.4, 0]} castShadow>
             <boxGeometry args={[0.26, 0.8, 0.3]} />
             <meshStandardMaterial color={outfit} />
+            <Outlines color={OUTLINE_COLOR} thickness={0.006} />
           </mesh>
           <mesh position={[0.16, 0.4, 0]} castShadow>
             <boxGeometry args={[0.26, 0.8, 0.3]} />
             <meshStandardMaterial color={outfit} />
+            <Outlines color={OUTLINE_COLOR} thickness={0.006} />
           </mesh>
         </>
       )}
@@ -145,15 +154,18 @@ function BlockyPerson({ position, skin, hair, outfit, outfitAccent, isFemale, ho
       <mesh position={[0, 1.15, 0]} castShadow>
         <boxGeometry args={[0.7, 0.7, 0.4]} />
         <meshStandardMaterial color={outfitAccent} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.006} />
       </mesh>
 
       <mesh position={[-0.5, 1.15, 0]} castShadow>
         <boxGeometry args={[0.22, 0.65, 0.22]} />
         <meshStandardMaterial color={skin} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
       </mesh>
       <mesh position={[0.5, 1.15, 0]} castShadow>
         <boxGeometry args={[0.22, 0.65, 0.22]} />
         <meshStandardMaterial color={skin} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
       </mesh>
 
       {holdsPaddle && <PickleballPaddle position={[0.6, 0.82, 0.1]} rotation={[0.15, 0, -0.12]} />}
@@ -161,17 +173,58 @@ function BlockyPerson({ position, skin, hair, outfit, outfitAccent, isFemale, ho
       <mesh position={[0, 1.85, 0]} castShadow>
         <boxGeometry args={[0.52, 0.52, 0.52]} />
         <meshStandardMaterial color={skin} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.006} />
       </mesh>
 
       <mesh position={[0, 2.06, isFemale ? -0.04 : 0]} castShadow>
         <boxGeometry args={isFemale ? [0.58, 0.32, 0.58] : [0.56, 0.18, 0.56]} />
         <meshStandardMaterial color={hair} />
+        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
       </mesh>
       {isFemale && (
-        <mesh position={[0, 1.6, -0.24]} castShadow>
-          <boxGeometry args={[0.48, 0.6, 0.14]} />
+        <mesh position={[0, 1.8, -0.24]} castShadow>
+          <boxGeometry args={[0.48, 0.24, 0.14]} />
           <meshStandardMaterial color={hair} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
         </mesh>
+      )}
+
+      {isFemale && (
+        <group position={[0, 1.89, 0.27]}>
+          {/* rims */}
+          <RoundedBox args={[0.23, 0.19, 0.025]} radius={0.03} smoothness={4} position={[-0.15, 0, 0]} castShadow>
+            <meshStandardMaterial color="#1c1c1c" />
+            <Outlines color={OUTLINE_COLOR} thickness={0.002} />
+          </RoundedBox>
+          <RoundedBox args={[0.23, 0.19, 0.025]} radius={0.03} smoothness={4} position={[0.15, 0, 0]} castShadow>
+            <meshStandardMaterial color="#1c1c1c" />
+            <Outlines color={OUTLINE_COLOR} thickness={0.002} />
+          </RoundedBox>
+
+          {/* lenses - inset, lighter, and slightly proud of the rim */}
+          <RoundedBox args={[0.17, 0.13, 0.006]} radius={0.02} smoothness={4} position={[-0.15, 0, 0.017]}>
+            <meshStandardMaterial color="#dbe9f5" transparent opacity={0.55} roughness={0.15} />
+          </RoundedBox>
+          <RoundedBox args={[0.17, 0.13, 0.006]} radius={0.02} smoothness={4} position={[0.15, 0, 0.017]}>
+            <meshStandardMaterial color="#dbe9f5" transparent opacity={0.55} roughness={0.15} />
+          </RoundedBox>
+
+          {/* bridge */}
+          <mesh position={[0, 0, 0]} castShadow>
+            <boxGeometry args={[0.08, 0.025, 0.02]} />
+            <meshStandardMaterial color="#1c1c1c" />
+          </mesh>
+
+          {/* temple arms */}
+          <mesh position={[-0.28, 0, -0.09]} rotation={[0, 0.3, 0]} castShadow>
+            <boxGeometry args={[0.02, 0.02, 0.18]} />
+            <meshStandardMaterial color="#1c1c1c" />
+          </mesh>
+          <mesh position={[0.28, 0, -0.09]} rotation={[0, -0.3, 0]} castShadow>
+            <boxGeometry args={[0.02, 0.02, 0.18]} />
+            <meshStandardMaterial color="#1c1c1c" />
+          </mesh>
+        </group>
       )}
     </group>
   )
@@ -180,9 +233,25 @@ function BlockyPerson({ position, skin, hair, outfit, outfitAccent, isFemale, ho
 export function PeopleScene() {
   return (
     <div className="scene3d">
-      <Canvas shadows camera={{ position: [0, 1.6, 4.5], fov: 45 }} gl={{ alpha: true }}>
+      <Canvas
+        shadows
+        dpr={[1, 2]}
+        camera={{ position: [0, 1.6, 4.5], fov: 45 }}
+        gl={{ alpha: true, antialias: true }}
+      >
         <ambientLight intensity={0.7} />
-        <directionalLight position={[3, 5, 2]} intensity={1.2} castShadow />
+        <directionalLight
+          position={[3, 5, 2]}
+          intensity={1.2}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-2}
+          shadow-camera-right={2}
+          shadow-camera-top={3}
+          shadow-camera-bottom={-1}
+          shadow-camera-near={1}
+          shadow-camera-far={10}
+        />
 
         <BlockyPerson
           position={[-0.7, 0, 0]}

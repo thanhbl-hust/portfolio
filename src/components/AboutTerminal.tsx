@@ -15,7 +15,7 @@ const FILES: Record<FileKey, { label: string; filename: string; lines: Line[]; s
       [
         { text: 'export', cls: 'tok-keyword' },
         { text: ' USER=' },
-        { text: '"Bui Lam Thanh"', cls: 'tok-string' },
+        { text: '"Lam Thanh Bui"', cls: 'tok-string' },
       ],
       [],
       [
@@ -70,10 +70,10 @@ export function AboutTerminal() {
               {line.length === 0
                 ? ' '
                 : line.map((token, j) => (
-                    <span key={j} className={token.cls}>
-                      {token.text}
-                    </span>
-                  ))}
+                  <span key={j} className={token.cls}>
+                    {token.text}
+                  </span>
+                ))}
               {file.showCursor && i === lastLineIndex && <span className="terminal__cursor" />}
             </span>
           </div>
