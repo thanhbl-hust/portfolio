@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="220" viewBox="0 0 640 220">
-  <rect width="640" height="220" fill="#f2ede1"/>
-  <rect x="20" y="80" width="140" height="60" fill="none" stroke="#201d17" stroke-width="2"/>
-  <text x="90" y="115" font-family="monospace" font-size="16" text-anchor="middle" fill="#201d17">Client</text>
-  <rect x="480" y="80" width="140" height="60" fill="none" stroke="#201d17" stroke-width="2"/>
-  <text x="550" y="115" font-family="monospace" font-size="16" text-anchor="middle" fill="#201d17">Server</text>
-  <rect x="250" y="80" width="140" height="60" fill="none" stroke="#201d17" stroke-width="2"/>
-  <text x="320" y="108" font-family="monospace" font-size="14" text-anchor="middle" fill="#201d17">Router /</text>
-  <text x="320" y="126" font-family="monospace" font-size="14" text-anchor="middle" fill="#201d17">NAT</text>
-  <line x1="160" y1="110" x2="250" y2="110" stroke="#201d17" stroke-width="2"/>
-  <line x1="390" y1="110" x2="480" y2="110" stroke="#201d17" stroke-width="2"/>
+  <rect width="640" height="220" fill="#eaf0f7"/>
+  <rect x="20" y="80" width="140" height="60" fill="none" stroke="#182430" stroke-width="2"/>
+  <text x="90" y="115" font-family="monospace" font-size="16" text-anchor="middle" fill="#182430">Client</text>
+  <rect x="480" y="80" width="140" height="60" fill="none" stroke="#182430" stroke-width="2"/>
+  <text x="550" y="115" font-family="monospace" font-size="16" text-anchor="middle" fill="#182430">Server</text>
+  <rect x="250" y="80" width="140" height="60" fill="none" stroke="#182430" stroke-width="2"/>
+  <text x="320" y="108" font-family="monospace" font-size="14" text-anchor="middle" fill="#182430">Router /</text>
+  <text x="320" y="126" font-family="monospace" font-size="14" text-anchor="middle" fill="#182430">NAT</text>
+  <line x1="160" y1="110" x2="250" y2="110" stroke="#182430" stroke-width="2"/>
+  <line x1="390" y1="110" x2="480" y2="110" stroke="#182430" stroke-width="2"/>
 </svg>

@@ -1,14 +1,15 @@
 :root {
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
 
-  --color-bg: #faf7f0;
-  --color-bg-raised: #f2ede1;
-  --color-ink: #201d17;
-  --color-ink-soft: #4a4536;
-  --color-border: #ddd6c4;
+  --color-bg: #f6f9fc;
+  --color-bg-raised: #eaf0f7;
+  --color-ink: #182430;
+  --color-ink-soft: #4c5a6b;
+  --color-border: #d2dde9;
   --color-accent: #1d5fae;
   --color-accent-soft: #d9e6f7;
-  --color-quote-bar: #a68a3f;
+  --color-quote-bar: #7ba3d0;
+  --color-syntax-string: #8a6524;
   --color-code-bg: var(--color-bg-raised);
   --color-code-fg: var(--color-ink);
   --color-syntax-keyword: #8250df;
@@ -20,16 +21,17 @@
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #17140f;
-  --color-bg-raised: #221f18;
-  --color-ink: #ece6d6;
-  --color-ink-soft: #b3ab93;
-  --color-border: #3a352a;
+  --color-bg: #0f151d;
+  --color-bg-raised: #18212c;
+  --color-ink: #e2e9f2;
+  --color-ink-soft: #9aa8ba;
+  --color-border: #2b3644;
   --color-accent: #7db0f2;
   --color-accent-soft: #24344a;
-  --color-quote-bar: #c9a227;
-  --color-code-bg: #1e2127;
-  --color-code-fg: #d6d2c4;
+  --color-quote-bar: #6d9bd4;
+  --color-syntax-string: #d0aa4e;
+  --color-code-bg: #161d26;
+  --color-code-fg: #d1d9e3;
   --color-syntax-keyword: #c297ff;
   --color-syntax-number: #8fbc74;
 
@@ -600,7 +602,7 @@ a:hover {
 .hljs-regexp,
 .hljs-meta,
 .hljs-symbol {
-  color: var(--color-quote-bar);
+  color: var(--color-syntax-string);
 }
 
 /* numbers, booleans, null */
@@ -676,16 +678,16 @@ a:hover {
 
 .terminal:hover {
   transform: translateY(-3px);
-  border-color: #4caf50;
+  border-color: #6b9fd8;
   box-shadow:
-    0 0 18px 3px rgba(76, 175, 80, 0.22),
+    0 0 18px 3px rgba(107, 159, 216, 0.24),
     0 16px 36px rgba(0, 0, 0, 0.2);
 }
 
 :root[data-theme='dark'] .terminal:hover {
-  border-color: #8fd98f;
+  border-color: #9cc4f5;
   box-shadow:
-    0 0 22px 4px rgba(143, 217, 143, 0.3),
+    0 0 22px 4px rgba(156, 196, 245, 0.3),
     0 16px 36px rgba(0, 0, 0, 0.5);
 }
 
@@ -757,7 +759,7 @@ a:hover {
 }
 
 .tok-string {
-  color: var(--color-quote-bar);
+  color: var(--color-syntax-string);
 }
 
 .tok-heading-mark {
@@ -810,8 +812,8 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: #55643a;
-  color: #f1ecd9;
+  background: #3f6595;
+  color: #eef4fb;
   font-size: 0.75rem;
   padding: 0.4rem 1rem;
 }

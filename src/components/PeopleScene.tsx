@@ -1,7 +1,9 @@
 import { useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
-import { Group, Quaternion, Vector3 } from 'three'
+import { DirectionalLight, Group, Object3D, Quaternion, Vector3 } from 'three'
+
+import { useIsDarkTheme } from '../hooks/useIsDarkTheme'
 
 const OUTLINE_COLOR = '#15130f'
 
@@ -10,6 +12,10 @@ const COURT_HALF_WIDTH = 2.5
 const COURT_HALF_LENGTH = 5
 const COURT_KITCHEN_DEPTH = 1.6
 const COURT_LINE_COLOR = '#f2f2f2'
+const COURT_DAY_SURFACE = '#4a82b0'
+const COURT_DAY_KITCHEN = '#5c96c4'
+const COURT_NIGHT_SURFACE = '#1e4a67'
+const COURT_NIGHT_KITCHEN = '#28607f'
 
 const BALL_RADIUS = 0.075
 
@@ -98,7 +104,9 @@ function ballPositionAt(t: number, c: RallyConfig): { x: number; y: number; z: n
   }
 }
 
-function PickleballCourt() {
+function PickleballCourt({ night }: { night: boolean }) {
+  const surfaceColor = night ? COURT_NIGHT_SURFACE : COURT_DAY_SURFACE
+  const kitchenColor = night ? COURT_NIGHT_KITCHEN : COURT_DAY_KITCHEN
   const nearBaseline = COURT_NET_Z + COURT_HALF_LENGTH
   const farBaseline = COURT_NET_Z - COURT_HALF_LENGTH
   const nearKitchenLine = COURT_NET_Z + COURT_KITCHEN_DEPTH
@@ -110,17 +118,17 @@ function PickleballCourt() {
       {/* court surface */}
       <mesh position={[0, 0, COURT_NET_Z]} receiveShadow>
         <boxGeometry args={[courtWidth, 0.05, COURT_HALF_LENGTH * 2]} />
-        <meshStandardMaterial color="#3f9142" roughness={0.85} />
+        <meshStandardMaterial color={surfaceColor} roughness={0.85} />
       </mesh>
 
       {/* kitchen (non-volley) zones, slightly lighter */}
       <mesh position={[0, 0.026, (nearKitchenLine + COURT_NET_Z) / 2]} receiveShadow>
         <boxGeometry args={[courtWidth, 0.001, COURT_KITCHEN_DEPTH]} />
-        <meshStandardMaterial color="#4fab52" roughness={0.85} />
+        <meshStandardMaterial color={kitchenColor} roughness={0.85} />
       </mesh>
       <mesh position={[0, 0.026, (farKitchenLine + COURT_NET_Z) / 2]} receiveShadow>
         <boxGeometry args={[courtWidth, 0.001, COURT_KITCHEN_DEPTH]} />
-        <meshStandardMaterial color="#4fab52" roughness={0.85} />
+        <meshStandardMaterial color={kitchenColor} roughness={0.85} />
       </mesh>
 
       {/* sidelines */}
@@ -183,6 +191,99 @@ function PickleballCourt() {
         <meshStandardMaterial color={COURT_LINE_COLOR} />
       </mesh>
     </group>
+  )
+}
+
+const LAMP_COLOR = '#eaf3ff'
+
+/** A dim light pinned to the camera so whatever faces the viewer keeps some
+ * detail while the scene auto-rotates. */
+function CameraFill() {
+  const ref = useRef<DirectionalLight>(null)
+  useFrame((state) => {
+    ref.current?.position.copy(state.camera.position)
+  })
+  return <directionalLight ref={ref} intensity={0.5} color="#a9c1e8" />
+}
+
+/** One floodlight beam. There is no fixture to see - only the pool of light
+ * it throws onto the court. */
+function CourtLight({
+  position,
+  aimAt,
+  castShadow = false,
+}: {
+  position: [number, number, number]
+  aimAt: [number, number, number]
+  castShadow?: boolean
+}) {
+  // A spotlight aims at its `target` object, which has to live in the scene.
+  const target = useMemo(() => {
+    const object = new Object3D()
+    object.position.set(...aimAt)
+    return object
+  }, [aimAt])
+
+  return (
+    <>
+      <primitive object={target} />
+      <spotLight
+        position={position}
+        target={target}
+        color={LAMP_COLOR}
+        intensity={130}
+        angle={0.82}
+        penumbra={0.72}
+        distance={26}
+        decay={1}
+        castShadow={castShadow}
+        shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0004}
+      />
+    </>
+  )
+}
+
+/** Daylight: warm key light + cool fill, so the blocks read as solid shapes
+ * instead of flat colour. */
+function DayLighting() {
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <directionalLight
+        position={[4, 8, 5]}
+        intensity={2}
+        color="#fff6ec"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0002}
+        shadow-camera-left={-9}
+        shadow-camera-right={9}
+        shadow-camera-top={9}
+        shadow-camera-bottom={-9}
+        shadow-camera-near={1}
+        shadow-camera-far={28}
+      />
+      <directionalLight position={[-5, 4, -4]} intensity={0.45} color="#dce9ff" />
+    </>
+  )
+}
+
+/** Night match: a faint blue night sky, everything else comes from the
+ * floodlights around the court. */
+function NightLighting() {
+  return (
+    <>
+      <ambientLight intensity={0.3} color="#8ea6cc" />
+      <hemisphereLight args={['#33456b', '#0b1018', 0.5]} />
+      <directionalLight position={[-6, 7, -5]} intensity={0.22} color="#8ea6cc" />
+      <CameraFill />
+
+      <CourtLight position={[3.24, 3.96, 2.6]} aimAt={[-1.1, 0.6, 0.6]} castShadow />
+      <CourtLight position={[-3.24, 3.96, 2.6]} aimAt={[1.1, 0.6, 2.2]} />
+      <CourtLight position={[3.24, 3.96, -5.6]} aimAt={[-1.1, 0.6, -4.6]} castShadow />
+      <CourtLight position={[-3.24, 3.96, -5.6]} aimAt={[1.1, 0.6, -6.0]} />
+    </>
   )
 }
 
@@ -747,6 +848,9 @@ const RALLY: RallyConfig = {
 }
 
 export function PeopleScene() {
+  // Dark theme puts the match under floodlights; light theme keeps daylight.
+  const night = useIsDarkTheme()
+
   return (
     <div className="scene3d">
       <Canvas
@@ -755,26 +859,9 @@ export function PeopleScene() {
         camera={{ position: [3.2, 4.6, 10.5], fov: 50 }}
         gl={{ alpha: true, antialias: true }}
       >
-        {/* Warm key light + cool fill, so the blocks read as solid shapes
-            instead of flat colour. */}
-        <ambientLight intensity={0.5} />
-        <directionalLight
-          position={[4, 8, 5]}
-          intensity={2}
-          color="#fff6ec"
-          castShadow
-          shadow-mapSize={[2048, 2048]}
-          shadow-bias={-0.0002}
-          shadow-camera-left={-9}
-          shadow-camera-right={9}
-          shadow-camera-top={9}
-          shadow-camera-bottom={-9}
-          shadow-camera-near={1}
-          shadow-camera-far={28}
-        />
-        <directionalLight position={[-5, 4, -4]} intensity={0.45} color="#dce9ff" />
+        {night ? <NightLighting /> : <DayLighting />}
 
-        <PickleballCourt />
+        <PickleballCourt night={night} />
 
         <BlockyPerson
           position={PLAYER_A_POS}
