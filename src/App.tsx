@@ -25,6 +25,7 @@ export default function App() {
     <HashRouter>
       <ScrollToTopOnNavigate />
       <ScrollProgress />
+      <div className="top-bar" />
       <Brand />
       <TopControls />
       <BackToTop />

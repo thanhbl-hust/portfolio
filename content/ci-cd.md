@@ -1,7 +1,7 @@
 ---
-title: "Understanding CI/CD Inconsistency"
+title: "Guides: How to write blogs"
 date: "2026-09-07"
-tag: "CI/CD"
+tag: "Custom"
 ---
 
 ## Introduction
@@ -21,13 +21,13 @@ platform has a unique setup. For example:
 > Disclaimer: This is only my opinions. But I've used all of these extensively with a deep
 > understanding.
 
-| CI/CD Name     | Format               | Personal Opinion                                             |
-| -------------- | -------------------- | -------------------------------------------------------------|
-| GitLab CI      | `.gitlab-ci.yml`      | Very good                                                     |
-| Tekton CI      | K8s manifest (YAML)  | Not recommended without in-depth K8s knowledge                |
-| GitHub Actions | `./github` (YAML)    | Good                                                          |
-| Jenkins        | ClickOps/Groovy      | Good initially, fast but not reliable long term                |
-| AWS CodePipeline | `buildspec.yaml`   | OK, but some cases need tricky workarounds                    |
+| CI/CD Name       | Format              | Personal Opinion                                |
+| ---------------- | ------------------- | ----------------------------------------------- |
+| GitLab CI        | `.gitlab-ci.yml`    | Very good                                       |
+| Tekton CI        | K8s manifest (YAML) | Not recommended without in-depth K8s knowledge  |
+| GitHub Actions   | `./github` (YAML)   | Good                                            |
+| Jenkins          | ClickOps/Groovy     | Good initially, fast but not reliable long term |
+| AWS CodePipeline | `buildspec.yaml`    | OK, but some cases need tricky workarounds      |
 
 ## Why does this happen?
 
