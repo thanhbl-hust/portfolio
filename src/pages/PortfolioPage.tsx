@@ -1,9 +1,13 @@
+import { useRef } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useRevealChildren } from '../hooks/useRevealChildren'
 import { AboutTerminal } from '../components/AboutTerminal'
 import { PeopleScene } from '../components/PeopleScene'
 
 export function PortfolioPage() {
   useDocumentTitle('Bui Lam Thanh')
+  const bodyRef = useRef<HTMLDivElement>(null)
+  useRevealChildren(bodyRef)
 
   return (
     <article className="article">
@@ -11,7 +15,7 @@ export function PortfolioPage() {
 
       <AboutTerminal />
 
-      <div className="article__body">
+      <div className="article__body" ref={bodyRef}>
         <h2 id="about">About Me</h2>
         <p>
           Replace this paragraph with a short introduction: who you are, what you work on day to

@@ -1017,6 +1017,30 @@ a:hover {
   color: var(--color-ink-soft);
 }
 
+/* ---------- scroll reveal ---------- */
+
+.article__body > *,
+.blog-list > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.article__body > *.reveal-visible,
+.blog-list > *.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article__body > *,
+  .blog-list > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ---------- mobile ---------- */
 
 @media (max-width: 860px) {

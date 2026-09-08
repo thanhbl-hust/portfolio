@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -11,6 +11,7 @@ import { CodeBlock } from '../components/CodeBlock'
 import { SuggestedArticles } from '../components/SuggestedArticles'
 import { ArticleSidebar } from '../components/ArticleSidebar'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useRevealChildren } from '../hooks/useRevealChildren'
 
 const MIN_HEADINGS_FOR_TOC = 2
 
@@ -20,6 +21,8 @@ export function ArticlePage() {
   const toc = useMemo(() => (article ? buildToc(article.body) : []), [article])
   useDocumentTitle(article?.title)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const bodyRef = useRef<HTMLDivElement>(null)
+  useRevealChildren(bodyRef, [article?.slug])
 
   useEffect(() => {
     if (!drawerOpen) return
@@ -84,7 +87,7 @@ export function ArticlePage() {
 
         {showToc && <TableOfContents items={toc} />}
 
-        <div className="article__body">
+        <div className="article__body" ref={bodyRef}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSlug, rehypeHighlight]}
