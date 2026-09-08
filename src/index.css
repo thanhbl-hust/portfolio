@@ -1,5 +1,5 @@
 :root {
-  --font-mono: 'Space Mono', 'SFMono-Regular', Consolas, monospace;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
 
   --color-bg: #faf7f0;
   --color-bg-raised: #f2ede1;
@@ -676,8 +676,17 @@ a:hover {
 
 .terminal:hover {
   transform: translateY(-3px);
-  border-color: var(--color-accent);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+  border-color: #4caf50;
+  box-shadow:
+    0 0 18px 3px rgba(76, 175, 80, 0.22),
+    0 16px 36px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='dark'] .terminal:hover {
+  border-color: #8fd98f;
+  box-shadow:
+    0 0 22px 4px rgba(143, 217, 143, 0.3),
+    0 16px 36px rgba(0, 0, 0, 0.5);
 }
 
 .terminal__tabs {
@@ -789,6 +798,12 @@ a:hover {
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--color-accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.terminal__avatar:hover {
+  transform: scale(1.1) rotate(-3deg);
+  box-shadow: 0 0 0 5px var(--color-accent-soft);
 }
 
 .terminal__statusbar {

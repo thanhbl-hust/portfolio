@@ -1,9 +1,103 @@
 import { useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { ContactShadows, OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
+import { OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
 import { Quaternion, Vector3 } from 'three'
 
 const OUTLINE_COLOR = '#15130f'
+
+const COURT_NET_Z = -1.5
+const COURT_HALF_WIDTH = 2.5
+const COURT_HALF_LENGTH = 5
+const COURT_KITCHEN_DEPTH = 1.6
+const COURT_LINE_COLOR = '#f2f2f2'
+
+function PickleballCourt() {
+  const nearBaseline = COURT_NET_Z + COURT_HALF_LENGTH
+  const farBaseline = COURT_NET_Z - COURT_HALF_LENGTH
+  const nearKitchenLine = COURT_NET_Z + COURT_KITCHEN_DEPTH
+  const farKitchenLine = COURT_NET_Z - COURT_KITCHEN_DEPTH
+  const courtWidth = COURT_HALF_WIDTH * 2
+
+  return (
+    <group>
+      {/* court surface */}
+      <mesh position={[0, 0, COURT_NET_Z]} receiveShadow>
+        <boxGeometry args={[courtWidth, 0.05, COURT_HALF_LENGTH * 2]} />
+        <meshStandardMaterial color="#3f9142" roughness={0.85} />
+      </mesh>
+
+      {/* kitchen (non-volley) zones, slightly lighter */}
+      <mesh position={[0, 0.026, (nearKitchenLine + COURT_NET_Z) / 2]} receiveShadow>
+        <boxGeometry args={[courtWidth, 0.001, COURT_KITCHEN_DEPTH]} />
+        <meshStandardMaterial color="#4fab52" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.026, (farKitchenLine + COURT_NET_Z) / 2]} receiveShadow>
+        <boxGeometry args={[courtWidth, 0.001, COURT_KITCHEN_DEPTH]} />
+        <meshStandardMaterial color="#4fab52" roughness={0.85} />
+      </mesh>
+
+      {/* sidelines */}
+      <mesh position={[-COURT_HALF_WIDTH + 0.03, 0.03, COURT_NET_Z]}>
+        <boxGeometry args={[0.06, 0.01, COURT_HALF_LENGTH * 2]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+      <mesh position={[COURT_HALF_WIDTH - 0.03, 0.03, COURT_NET_Z]}>
+        <boxGeometry args={[0.06, 0.01, COURT_HALF_LENGTH * 2]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+
+      {/* baselines */}
+      <mesh position={[0, 0.03, nearBaseline - 0.03]}>
+        <boxGeometry args={[courtWidth, 0.01, 0.06]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+      <mesh position={[0, 0.03, farBaseline + 0.03]}>
+        <boxGeometry args={[courtWidth, 0.01, 0.06]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+
+      {/* kitchen lines */}
+      <mesh position={[0, 0.03, nearKitchenLine]}>
+        <boxGeometry args={[courtWidth, 0.01, 0.06]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+      <mesh position={[0, 0.03, farKitchenLine]}>
+        <boxGeometry args={[courtWidth, 0.01, 0.06]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+
+      {/* center service lines, baseline to kitchen line on each side */}
+      <mesh position={[0, 0.03, (nearBaseline + nearKitchenLine) / 2]}>
+        <boxGeometry args={[0.06, 0.01, nearBaseline - nearKitchenLine]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+      <mesh position={[0, 0.03, (farBaseline + farKitchenLine) / 2]}>
+        <boxGeometry args={[0.06, 0.01, farBaseline - farKitchenLine]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+
+      {/* net posts */}
+      <mesh position={[-COURT_HALF_WIDTH - 0.15, 0.55, COURT_NET_Z]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 1.1, 8]} />
+        <meshStandardMaterial color="#1c1c1c" />
+      </mesh>
+      <mesh position={[COURT_HALF_WIDTH + 0.15, 0.55, COURT_NET_Z]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 1.1, 8]} />
+        <meshStandardMaterial color="#1c1c1c" />
+      </mesh>
+
+      {/* net mesh + top tape */}
+      <mesh position={[0, 0.5, COURT_NET_Z]} castShadow>
+        <boxGeometry args={[courtWidth + 0.3, 0.85, 0.02]} />
+        <meshStandardMaterial color="#0e0e0e" transparent opacity={0.55} />
+      </mesh>
+      <mesh position={[0, 0.93, COURT_NET_Z]}>
+        <boxGeometry args={[courtWidth + 0.3, 0.06, 0.03]} />
+        <meshStandardMaterial color={COURT_LINE_COLOR} />
+      </mesh>
+    </group>
+  )
+}
 
 function Pickleball({ position }: { position: [number, number, number] }) {
   const radius = 0.055
@@ -236,22 +330,24 @@ export function PeopleScene() {
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [0, 1.6, 4.5], fov: 45 }}
+        camera={{ position: [0, 5, 11], fov: 50 }}
         gl={{ alpha: true, antialias: true }}
       >
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={0.75} />
         <directionalLight
-          position={[3, 5, 2]}
+          position={[4, 8, 4]}
           intensity={1.2}
           castShadow
           shadow-mapSize={[2048, 2048]}
-          shadow-camera-left={-2}
-          shadow-camera-right={2}
-          shadow-camera-top={3}
-          shadow-camera-bottom={-1}
+          shadow-camera-left={-8}
+          shadow-camera-right={8}
+          shadow-camera-top={8}
+          shadow-camera-bottom={-8}
           shadow-camera-near={1}
-          shadow-camera-far={10}
+          shadow-camera-far={25}
         />
+
+        <PickleballCourt />
 
         <BlockyPerson
           position={[-0.7, 0, 0]}
@@ -273,9 +369,14 @@ export function PeopleScene() {
 
         <Pickleball position={[-0.05, 1.2, 0.28]} />
 
-        <ContactShadows position={[0, 0, 0]} opacity={0.45} scale={4} blur={2.4} far={2} />
-
-        <OrbitControls enablePan={false} minDistance={2.5} maxDistance={8} target={[0, 1, 0]} />
+        <OrbitControls
+          enablePan={false}
+          minDistance={2.5}
+          maxDistance={22}
+          minPolarAngle={0.15}
+          maxPolarAngle={Math.PI / 2 - 0.02}
+          target={[0, 0.8, -1]}
+        />
       </Canvas>
     </div>
   )

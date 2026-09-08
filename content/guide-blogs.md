@@ -1,6 +1,6 @@
 ---
 title: "Guides: How to write blogs"
-date: "2026-09-07"
+date: "2026-09-08"
 tag: "Custom"
 ---
 
