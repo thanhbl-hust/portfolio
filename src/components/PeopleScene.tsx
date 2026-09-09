@@ -1,7 +1,7 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
-import { DirectionalLight, Group, Object3D, Quaternion, Vector3 } from 'three'
+import { Color, DirectionalLight, Group, Object3D, Quaternion, Vector3 } from 'three'
 
 import { useIsDarkTheme } from '../hooks/useIsDarkTheme'
 
@@ -161,15 +161,15 @@ function PickleballCourt({ night }: { night: boolean }) {
         <meshStandardMaterial color={COURT_LINE_COLOR} />
       </mesh>
 
-      {/* center service lines, baseline to kitchen line on each side */}
-      <mesh position={[0, 0.03, (nearBaseline + nearKitchenLine) / 2]}>
-        <boxGeometry args={[0.06, 0.01, nearBaseline - nearKitchenLine]} />
-        <meshStandardMaterial color={COURT_LINE_COLOR} />
-      </mesh>
-      <mesh position={[0, 0.03, (farBaseline + farKitchenLine) / 2]}>
-        <boxGeometry args={[0.06, 0.01, farBaseline - farKitchenLine]} />
-        <meshStandardMaterial color={COURT_LINE_COLOR} />
-      </mesh>
+      {/* center service lines, baseline to kitchen line on each side.
+        * Both take the same positive length - handing boxGeometry a negative
+        * depth turns the box inside out and its normals with it. */}
+      {[(nearBaseline + nearKitchenLine) / 2, (farBaseline + farKitchenLine) / 2].map((z) => (
+        <mesh key={z} position={[0, 0.03, z]}>
+          <boxGeometry args={[0.06, 0.01, COURT_HALF_LENGTH - COURT_KITCHEN_DEPTH]} />
+          <meshStandardMaterial color={COURT_LINE_COLOR} />
+        </mesh>
+      ))}
 
       {/* net posts */}
       <mesh position={[-COURT_HALF_WIDTH - 0.15, 0.55, COURT_NET_Z]} castShadow>
@@ -203,7 +203,7 @@ function CameraFill() {
   useFrame((state) => {
     ref.current?.position.copy(state.camera.position)
   })
-  return <directionalLight ref={ref} intensity={0.5} color="#a9c1e8" />
+  return <directionalLight ref={ref} intensity={0.25} color="#a9c1e8" />
 }
 
 /** One floodlight beam. There is no fixture to see - only the pool of light
@@ -231,11 +231,11 @@ function CourtLight({
         position={position}
         target={target}
         color={LAMP_COLOR}
-        intensity={130}
-        angle={0.82}
-        penumbra={0.72}
+        intensity={115}
+        angle={0.9}
+        penumbra={0.85}
         distance={26}
-        decay={1}
+        decay={2}
         castShadow={castShadow}
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.0004}
@@ -274,9 +274,9 @@ function DayLighting() {
 function NightLighting() {
   return (
     <>
-      <ambientLight intensity={0.3} color="#8ea6cc" />
-      <hemisphereLight args={['#33456b', '#0b1018', 0.5]} />
-      <directionalLight position={[-6, 7, -5]} intensity={0.22} color="#8ea6cc" />
+      <ambientLight intensity={0.16} color="#8ea6cc" />
+      <hemisphereLight args={['#33456b', '#0b1018', 0.3]} />
+      <directionalLight position={[-6, 7, -5]} intensity={0.14} color="#8ea6cc" />
       <CameraFill />
 
       <CourtLight position={[3.24, 3.96, 2.6]} aimAt={[-1.1, 0.6, 0.6]} castShadow />
@@ -442,6 +442,69 @@ const HIP_Y = 0.78
 const SHOULDER_Y = 1.47
 const NECK_Y = 1.55
 
+/** Voxel figures read as "detailed" mostly through shading - nearly every part
+ * gets a slightly darker or lighter sibling. Deriving those from one colour
+ * keeps the palette coherent instead of hand-picking two dozen hexes. */
+function darken(hex: string, amount: number): string {
+  return `#${new Color(hex).multiplyScalar(1 - amount).getHexString()}`
+}
+
+function lighten(hex: string, amount: number): string {
+  return `#${new Color(hex).lerp(new Color(0xffffff), amount).getHexString()}`
+}
+
+/** The two players differ in proportion, not just in colour: narrower
+ * shoulders, a waist that actually tapers and hips that flare back out are
+ * what read as feminine at this blocky resolution. */
+type Build = {
+  chestWidth: number
+  chestDepth: number
+  waistWidth: number
+  waistDepth: number
+  hipsWidth: number
+  hipsDepth: number
+  /** Half the shoulder span - also where the arms, and so the paddle, pivot. */
+  shoulderHalf: number
+  hipHalf: number
+  armWidth: number
+  legWidth: number
+  headWidth: number
+}
+
+const MALE_BUILD: Build = {
+  chestWidth: 0.72,
+  chestDepth: 0.41,
+  waistWidth: 0.66,
+  waistDepth: 0.38,
+  hipsWidth: 0.68,
+  hipsDepth: 0.39,
+  shoulderHalf: 0.5,
+  hipHalf: 0.17,
+  armWidth: 0.23,
+  legWidth: 0.26,
+  headWidth: 0.52,
+}
+
+const FEMALE_BUILD: Build = {
+  chestWidth: 0.6,
+  chestDepth: 0.36,
+  waistWidth: 0.47,
+  waistDepth: 0.3,
+  hipsWidth: 0.64,
+  hipsDepth: 0.38,
+  shoulderHalf: 0.375,
+  hipHalf: 0.15,
+  armWidth: 0.19,
+  legWidth: 0.225,
+  headWidth: 0.5,
+}
+
+// Torso blocks, measured up from the hips (the torso group's own origin).
+const HIPS_Y = 0.085
+const WAIST_Y = 0.295
+const CHEST_Y = 0.57
+const COLLAR_Y = 0.745
+
 function BlockyPerson({
   position,
   rotationY = 0,
@@ -468,6 +531,21 @@ function BlockyPerson({
   const legBackRef = useRef<Group>(null)
 
   const idleSeed = useMemo(() => Math.random() * Math.PI * 2, [])
+  const build = isFemale ? FEMALE_BUILD : MALE_BUILD
+
+  const palette = useMemo(
+    () => ({
+      shirt: outfit,
+      shirtShade: darken(outfit, 0.2),
+      shirtLight: lighten(outfit, 0.22),
+      bottom: outfitAccent,
+      bottomShade: darken(outfitAccent, 0.22),
+      bottomLight: lighten(outfitAccent, 0.28),
+      hairShade: darken(hair, 0.32),
+      hairLight: lighten(hair, 0.16),
+    }),
+    [outfit, outfitAccent, hair],
+  )
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -581,211 +659,432 @@ function BlockyPerson({
   })
 
   const shoeColor = '#f4f1e8'
-  const soleColor = '#4a4a4a'
+  const shoeShade = '#d9d4c6'
+  const soleColor = '#3c3c3c'
   const sockColor = '#ffffff'
+  const hw = build.headWidth
+  const faceZ = hw / 2
 
-  const leg = (side: 1 | -1) => (
-    <>
-      {/* thigh (shorts) */}
-      <mesh position={[0, -0.13, 0]} castShadow>
-        <boxGeometry args={[0.26, 0.26, 0.3]} />
-        <meshStandardMaterial color={outfit} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.006} />
-      </mesh>
-      {/* knee */}
-      <mesh position={[0, -0.28, 0.005]} castShadow>
-        <boxGeometry args={[0.235, 0.08, 0.285]} />
-        <meshStandardMaterial color={skinShade} />
-      </mesh>
-      {/* shin */}
-      <mesh position={[0, -0.43, 0]} castShadow>
-        <boxGeometry args={[0.225, 0.24, 0.26]} />
-        <meshStandardMaterial color={skin} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
-      </mesh>
-      {/* sock */}
-      <mesh position={[0, -0.59, 0]} castShadow>
-        <boxGeometry args={[0.245, 0.1, 0.28]} />
-        <meshStandardMaterial color={sockColor} />
-      </mesh>
-      {/* shoe upper */}
-      <mesh position={[0, -0.66, 0.04 * side]} castShadow>
-        <boxGeometry args={[0.28, 0.09, 0.34]} />
-        <meshStandardMaterial color={shoeColor} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.004} />
-      </mesh>
-      {/* sole - sits just on top of the court surface */}
-      <mesh position={[0, -0.725, 0.04 * side]} castShadow>
-        <boxGeometry args={[0.29, 0.05, 0.35]} />
-        <meshStandardMaterial color={soleColor} />
-      </mesh>
-    </>
-  )
+  const leg = (side: 1 | -1) => {
+    const w = build.legWidth
+    const footZ = 0.04 * side
+    const footDepth = w + 0.08
+    return (
+      <>
+        {/* thigh - shorts on him, bare under the skirt on her */}
+        <mesh position={[0, -0.13, 0]} castShadow>
+          <boxGeometry args={[w, 0.26, w + 0.04]} />
+          <meshStandardMaterial color={isFemale ? skin : palette.bottom} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.006} />
+        </mesh>
+        {!isFemale && (
+          <>
+            {/* shorts hem */}
+            <mesh position={[0, -0.245, 0]}>
+              <boxGeometry args={[w + 0.014, 0.05, w + 0.052]} />
+              <meshStandardMaterial color={palette.bottomShade} />
+            </mesh>
+            {/* side stripe, on the outboard leg face */}
+            <mesh position={[(w / 2) * side, -0.14, 0]}>
+              <boxGeometry args={[0.02, 0.2, w + 0.046]} />
+              <meshStandardMaterial color={palette.bottomLight} />
+            </mesh>
+          </>
+        )}
+        {/* knee */}
+        <mesh position={[0, -0.29, 0.005]} castShadow>
+          <boxGeometry args={[w - 0.03, 0.07, w + 0.025]} />
+          <meshStandardMaterial color={skinShade} />
+        </mesh>
+        {/* shin */}
+        <mesh position={[0, -0.43, 0]} castShadow>
+          <boxGeometry args={[w - 0.035, 0.22, w - 0.005]} />
+          <meshStandardMaterial color={skin} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+        </mesh>
+        {/* calf, a touch deeper at the back */}
+        <mesh position={[0, -0.45, -0.045]}>
+          <boxGeometry args={[w - 0.07, 0.15, w - 0.06]} />
+          <meshStandardMaterial color={skinShade} />
+        </mesh>
+        {/* sock */}
+        <mesh position={[0, -0.585, 0]} castShadow>
+          <boxGeometry args={[w - 0.012, 0.12, w + 0.022]} />
+          <meshStandardMaterial color={sockColor} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.004} />
+        </mesh>
+        {[-0.552, -0.592].map((y) => (
+          <mesh key={y} position={[0, y, 0]}>
+            <boxGeometry args={[w - 0.002, 0.016, w + 0.032]} />
+            <meshStandardMaterial color={palette.shirt} />
+          </mesh>
+        ))}
+        {/* shoe upper */}
+        <mesh position={[0, -0.66, footZ]} castShadow>
+          <boxGeometry args={[w + 0.02, 0.09, footDepth]} />
+          <meshStandardMaterial color={shoeColor} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.004} />
+        </mesh>
+        {/* toe cap */}
+        <mesh position={[0, -0.675, footZ + footDepth / 2 - 0.045]}>
+          <boxGeometry args={[w + 0.024, 0.062, 0.1]} />
+          <meshStandardMaterial color={shoeShade} />
+        </mesh>
+        {/* heel tab */}
+        <mesh position={[0, -0.612, footZ - footDepth / 2 + 0.018]}>
+          <boxGeometry args={[w - 0.07, 0.055, 0.03]} />
+          <meshStandardMaterial color={palette.shirt} />
+        </mesh>
+        {/* laces */}
+        {[0.03, 0.075].map((dz) => (
+          <mesh key={dz} position={[0, -0.617, footZ + dz]}>
+            <boxGeometry args={[w - 0.08, 0.018, 0.026]} />
+            <meshStandardMaterial color={palette.shirtShade} />
+          </mesh>
+        ))}
+        {/* midsole */}
+        <mesh position={[0, -0.714, footZ]} castShadow>
+          <boxGeometry args={[w + 0.032, 0.038, footDepth + 0.012]} />
+          <meshStandardMaterial color={sockColor} />
+        </mesh>
+        {/* outsole - sits just on top of the court surface */}
+        <mesh position={[0, -0.741, footZ]}>
+          <boxGeometry args={[w + 0.034, 0.019, footDepth + 0.014]} />
+          <meshStandardMaterial color={soleColor} />
+        </mesh>
+      </>
+    )
+  }
 
-  const arm = (holding: boolean) => (
-    <>
-      {/* upper arm (sleeve) */}
-      <mesh position={[0, -0.16, 0]} castShadow>
-        <boxGeometry args={[0.23, 0.32, 0.23]} />
-        <meshStandardMaterial color={outfitAccent} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
-      </mesh>
-      {/* elbow */}
-      <mesh position={[0, -0.335, 0]} castShadow>
-        <boxGeometry args={[0.205, 0.06, 0.205]} />
-        <meshStandardMaterial color={skinShade} />
-      </mesh>
-      {/* forearm */}
-      <mesh position={[0, -0.48, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.26, 0.2]} />
-        <meshStandardMaterial color={skin} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.005} />
-      </mesh>
-      {/* wristband */}
-      <mesh position={[0, -0.625, 0]} castShadow>
-        <boxGeometry args={[0.215, 0.06, 0.215]} />
-        <meshStandardMaterial color={holding ? '#ffffff' : outfit} />
-      </mesh>
-      {/* hand */}
-      <mesh position={[0, -0.71, 0.01]} castShadow>
-        <boxGeometry args={[0.19, 0.14, 0.22]} />
-        <meshStandardMaterial color={skin} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.004} />
-      </mesh>
-    </>
-  )
+  const arm = (holding: boolean) => {
+    const w = build.armWidth
+    // Her top is sleeveless, which is most of what separates the two
+    // silhouettes from the shoulders down.
+    const sleeveless = isFemale
+    return (
+      <>
+        {/* shoulder cap: a sleeve on him, a strap over a bare shoulder on her */}
+        <mesh position={[0, -0.03, 0]} castShadow>
+          <boxGeometry args={[w + 0.05, 0.15, w + 0.05]} />
+          <meshStandardMaterial color={sleeveless ? skin : palette.shirt} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+        </mesh>
+        {sleeveless && (
+          <mesh position={[0, 0.015, 0]}>
+            <boxGeometry args={[w + 0.056, 0.075, w + 0.056]} />
+            <meshStandardMaterial color={palette.shirt} />
+          </mesh>
+        )}
+        {/* upper arm */}
+        <mesh position={[0, -0.19, 0]} castShadow>
+          <boxGeometry args={[w, 0.28, w]} />
+          <meshStandardMaterial color={sleeveless ? skin : palette.shirtShade} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+        </mesh>
+        {!sleeveless && (
+          /* sleeve hem */
+          <mesh position={[0, -0.315, 0]}>
+            <boxGeometry args={[w + 0.012, 0.04, w + 0.012]} />
+            <meshStandardMaterial color={palette.shirtLight} />
+          </mesh>
+        )}
+        {/* elbow */}
+        <mesh position={[0, -0.345, 0]}>
+          <boxGeometry args={[w - 0.025, 0.06, w - 0.025]} />
+          <meshStandardMaterial color={skinShade} />
+        </mesh>
+        {/* forearm */}
+        <mesh position={[0, -0.48, 0]} castShadow>
+          <boxGeometry args={[w - 0.03, 0.25, w - 0.03]} />
+          <meshStandardMaterial color={skin} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+        </mesh>
+        {/* wristband */}
+        <mesh position={[0, -0.625, 0]} castShadow>
+          <boxGeometry args={[w - 0.012, 0.075, w - 0.012]} />
+          <meshStandardMaterial color={holding ? sockColor : palette.shirt} />
+        </mesh>
+        <mesh position={[0, -0.625, 0]}>
+          <boxGeometry args={[w - 0.002, 0.02, w - 0.002]} />
+          <meshStandardMaterial color={holding ? palette.shirt : palette.shirtLight} />
+        </mesh>
+        {/* hand */}
+        <mesh position={[0, -0.71, 0.01]} castShadow>
+          <boxGeometry args={[w - 0.035, 0.14, w + 0.015]} />
+          <meshStandardMaterial color={skin} />
+          <Outlines color={OUTLINE_COLOR} thickness={0.004} />
+        </mesh>
+        {/* thumb */}
+        <mesh position={[0, -0.674, 0.077]}>
+          <boxGeometry args={[w - 0.115, 0.05, 0.05]} />
+          <meshStandardMaterial color={skinShade} />
+        </mesh>
+      </>
+    )
+  }
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       <group ref={rootRef}>
         {/* legs pivot at the hips */}
-        <group ref={legFrontRef} position={[0.16, HIP_Y, 0]}>
+        <group ref={legFrontRef} position={[build.hipHalf, HIP_Y, 0]}>
           {leg(1)}
         </group>
-        <group ref={legBackRef} position={[-0.16, HIP_Y, 0]}>
+        <group ref={legBackRef} position={[-build.hipHalf, HIP_Y, 0]}>
           {leg(-1)}
         </group>
 
         {/* everything above the waist rotates into the shot together */}
         <group ref={torsoRef} position={[0, HIP_Y, 0]}>
-          {/* waist */}
-          <mesh position={[0, 0.175, 0]} castShadow>
-            <boxGeometry args={[0.66, 0.35, 0.38]} />
-            <meshStandardMaterial color={outfitAccent} />
+          {/* hips - her widest point, his narrowest */}
+          <mesh position={[0, HIPS_Y, 0]} castShadow>
+            <boxGeometry args={[build.hipsWidth, 0.17, build.hipsDepth]} />
+            <meshStandardMaterial color={isFemale ? palette.bottom : palette.shirt} />
+            <Outlines color={OUTLINE_COLOR} thickness={0.006} />
+          </mesh>
+          {/* waist - deliberately taller than the gap it fills, so it sinks
+            * into the chest and hips instead of sharing a plane with them */}
+          <mesh position={[0, WAIST_Y, 0]} castShadow>
+            <boxGeometry args={[build.waistWidth, 0.29, build.waistDepth]} />
+            <meshStandardMaterial color={palette.shirt} />
             <Outlines color={OUTLINE_COLOR} thickness={0.006} />
           </mesh>
           {/* chest */}
-          <mesh position={[0, 0.525, 0]} castShadow>
-            <boxGeometry args={[0.7, 0.35, 0.4]} />
-            <meshStandardMaterial color={outfitAccent} />
+          <mesh position={[0, CHEST_Y, 0]} castShadow>
+            <boxGeometry args={[build.chestWidth, 0.3, build.chestDepth]} />
+            <meshStandardMaterial color={palette.shirt} />
             <Outlines color={OUTLINE_COLOR} thickness={0.006} />
           </mesh>
+          {/* side panels, the way a sports top is cut */}
+          {[1, -1].map((side) => (
+            <mesh key={side} position={[(build.chestWidth / 2 - 0.02) * side, CHEST_Y - 0.02, 0]}>
+              <boxGeometry args={[0.03, 0.26, build.chestDepth + 0.006]} />
+              <meshStandardMaterial color={palette.shirtShade} />
+            </mesh>
+          ))}
+          {isFemale && (
+            <>
+              {/* the top's shaped front */}
+              <mesh position={[0, CHEST_Y + 0.02, build.chestDepth / 2 - 0.035]} castShadow>
+                <boxGeometry args={[build.chestWidth - 0.2, 0.13, 0.1]} />
+                <meshStandardMaterial color={lighten(outfit, 0.1)} />
+              </mesh>
+              {/* scoop neckline */}
+              <mesh position={[0, CHEST_Y + 0.145, build.chestDepth / 2 - 0.03]}>
+                <boxGeometry args={[0.17, 0.06, 0.1]} />
+                <meshStandardMaterial color={skin} />
+              </mesh>
+              {/* hem band at the waist */}
+              <mesh position={[0, WAIST_Y - 0.1, 0]}>
+                <boxGeometry args={[build.waistWidth + 0.014, 0.05, build.waistDepth + 0.014]} />
+                <meshStandardMaterial color={palette.shirtShade} />
+              </mesh>
+            </>
+          )}
           {/* chest logo */}
-          <mesh position={[0.17, 0.56, 0.205]}>
-            <boxGeometry args={[0.12, 0.12, 0.015]} />
-            <meshStandardMaterial color={outfit} />
+          <mesh position={[isFemale ? -0.16 : 0.17, CHEST_Y + 0.02, build.chestDepth / 2 + 0.006]}>
+            <boxGeometry args={[0.1, 0.1, 0.015]} />
+            <meshStandardMaterial color={isFemale ? sockColor : palette.bottomLight} />
           </mesh>
           {/* collar */}
-          <mesh position={[0, 0.715, 0]} castShadow>
-            <boxGeometry args={[0.44, 0.06, 0.32]} />
-            <meshStandardMaterial color={outfit} />
+          <mesh position={[0, COLLAR_Y, 0]} castShadow>
+            <boxGeometry args={[isFemale ? 0.36 : 0.44, 0.06, isFemale ? 0.28 : 0.32]} />
+            <meshStandardMaterial color={isFemale ? palette.shirtShade : palette.bottom} />
           </mesh>
+
+          {isFemale && (
+            /* pleated skirt, hung from the hips so it stays put while the legs
+             * swing underneath it */
+            <group position={[0, HIPS_Y - 0.06, 0]}>
+              <mesh position={[0, 0.02, 0]} castShadow>
+                <boxGeometry args={[build.hipsWidth + 0.02, 0.07, build.hipsDepth + 0.02]} />
+                <meshStandardMaterial color={palette.shirt} />
+                <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+              </mesh>
+              <mesh position={[0, -0.13, 0]} castShadow>
+                <boxGeometry args={[build.hipsWidth + 0.05, 0.24, build.hipsDepth + 0.05]} />
+                <meshStandardMaterial color={palette.bottom} />
+                <Outlines color={OUTLINE_COLOR} thickness={0.006} />
+              </mesh>
+              {/* flared rim */}
+              <mesh position={[0, -0.265, 0]} castShadow>
+                <boxGeometry args={[build.hipsWidth + 0.1, 0.05, build.hipsDepth + 0.1]} />
+                <meshStandardMaterial color={palette.bottomShade} />
+                <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+              </mesh>
+              {/* pleats, front and back */}
+              {[-0.21, -0.07, 0.07, 0.21].map((x) =>
+                [1, -1].map((face) => (
+                  <mesh
+                    key={`${x}:${face}`}
+                    position={[x, -0.14, ((build.hipsDepth + 0.05) / 2 + 0.004) * face]}
+                  >
+                    <boxGeometry args={[0.05, 0.23, 0.01]} />
+                    <meshStandardMaterial color={palette.bottomLight} />
+                  </mesh>
+                )),
+              )}
+            </group>
+          )}
 
           {/* head pivots at the neck and tracks the ball */}
           <group ref={headRef} position={[0, NECK_Y - HIP_Y, 0]}>
+            {/* neck */}
             <mesh position={[0, 0.01, 0]} castShadow>
-              <boxGeometry args={[0.2, 0.14, 0.2]} />
+              <boxGeometry args={[isFemale ? 0.17 : 0.2, 0.14, isFemale ? 0.17 : 0.2]} />
               <meshStandardMaterial color={skinShade} />
             </mesh>
+            {/* head */}
             <mesh position={[0, 0.3, 0]} castShadow>
-              <boxGeometry args={[0.52, 0.52, 0.52]} />
+              <boxGeometry args={[hw, hw, hw]} />
               <meshStandardMaterial color={skin} />
               <Outlines color={OUTLINE_COLOR} thickness={0.006} />
             </mesh>
+            {/* jaw: tapered on her, squared off on him */}
+            <mesh position={[0, 0.055, 0.01]}>
+              <boxGeometry
+                args={isFemale ? [hw - 0.16, 0.07, hw - 0.13] : [hw - 0.06, 0.07, hw - 0.05]}
+              />
+              <meshStandardMaterial color={isFemale ? skin : skinShade} />
+            </mesh>
             {/* ears */}
-            <mesh position={[-0.28, 0.29, -0.02]} castShadow>
-              <boxGeometry args={[0.06, 0.14, 0.12]} />
-              <meshStandardMaterial color={skinShade} />
-            </mesh>
-            <mesh position={[0.28, 0.29, -0.02]} castShadow>
-              <boxGeometry args={[0.06, 0.14, 0.12]} />
-              <meshStandardMaterial color={skinShade} />
-            </mesh>
-            {/* eyes */}
-            <mesh position={[-0.12, 0.34, 0.262]}>
-              <boxGeometry args={[0.08, 0.08, 0.02]} />
-              <meshStandardMaterial color="#241d17" />
-            </mesh>
-            <mesh position={[0.12, 0.34, 0.262]}>
-              <boxGeometry args={[0.08, 0.08, 0.02]} />
-              <meshStandardMaterial color="#241d17" />
-            </mesh>
-            {/* nose */}
-            <mesh position={[0, 0.245, 0.275]}>
-              <boxGeometry args={[0.07, 0.08, 0.04]} />
-              <meshStandardMaterial color={skinShade} />
-            </mesh>
+            {[1, -1].map((side) => (
+              <mesh key={side} position={[(hw / 2 + 0.02) * side, 0.29, -0.02]} castShadow>
+                <boxGeometry args={[0.055, 0.13, 0.11]} />
+                <meshStandardMaterial color={skinShade} />
+              </mesh>
+            ))}
+            {isFemale &&
+              [1, -1].map((side) => (
+                /* earrings */
+                <mesh key={side} position={[(hw / 2 + 0.03) * side, 0.222, -0.02]}>
+                  <boxGeometry args={[0.04, 0.04, 0.04]} />
+                  <meshStandardMaterial color="#f2c94c" metalness={0.6} roughness={0.3} />
+                </mesh>
+              ))}
 
-            {/* hair: cap + fringe + side blocks */}
-            <mesh position={[0, 0.51, isFemale ? -0.04 : 0]} castShadow>
-              <boxGeometry args={isFemale ? [0.58, 0.3, 0.58] : [0.56, 0.18, 0.56]} />
+            {/* hair */}
+            <mesh position={[0, isFemale ? 0.48 : 0.5, isFemale ? -0.03 : 0]} castShadow>
+              <boxGeometry
+                args={isFemale ? [hw + 0.045, 0.22, hw + 0.05] : [hw + 0.04, 0.18, hw + 0.04]}
+              />
               <meshStandardMaterial color={hair} />
               <Outlines color={OUTLINE_COLOR} thickness={0.005} />
             </mesh>
-            <mesh position={[0, 0.44, 0.24]} castShadow>
-              <boxGeometry args={[0.54, 0.1, 0.08]} />
-              <meshStandardMaterial color={hair} />
+            {/* a lighter second layer, so the hair is not one flat slab */}
+            <mesh position={[0, isFemale ? 0.575 : 0.578, isFemale ? -0.07 : -0.04]}>
+              <boxGeometry args={[hw - 0.1, 0.05, hw - 0.08]} />
+              <meshStandardMaterial color={palette.hairLight} />
             </mesh>
-            <mesh position={[-0.255, 0.4, 0]} castShadow>
-              <boxGeometry args={[0.05, 0.16, 0.5]} />
-              <meshStandardMaterial color={hair} />
-            </mesh>
-            <mesh position={[0.255, 0.4, 0]} castShadow>
-              <boxGeometry args={[0.05, 0.16, 0.5]} />
-              <meshStandardMaterial color={hair} />
-            </mesh>
-            {isFemale && (
-              <mesh position={[0, 0.25, -0.24]} castShadow>
-                <boxGeometry args={[0.48, 0.28, 0.14]} />
-                <meshStandardMaterial color={hair} />
-                <Outlines color={OUTLINE_COLOR} thickness={0.005} />
-              </mesh>
+            {isFemale ? (
+              <>
+                {/* side-parted fringe: two blocks of different width */}
+                <mesh position={[-0.1, 0.472, faceZ - 0.04]} castShadow>
+                  <boxGeometry args={[0.29, 0.11, 0.1]} />
+                  <meshStandardMaterial color={hair} />
+                </mesh>
+                <mesh position={[0.165, 0.482, faceZ - 0.04]} castShadow>
+                  <boxGeometry args={[0.2, 0.09, 0.1]} />
+                  <meshStandardMaterial color={palette.hairLight} />
+                </mesh>
+                {/* hair clip */}
+                <mesh position={[0.215, 0.462, faceZ - 0.03]}>
+                  <boxGeometry args={[0.085, 0.03, 0.06]} />
+                  <meshStandardMaterial color={palette.shirtLight} />
+                </mesh>
+                {/* a short bob: the sides stop at the ears instead of
+                  * falling past them */}
+                {[1, -1].map((side) => (
+                  <group key={side}>
+                    <mesh position={[(hw / 2 + 0.03) * side, 0.395, -0.04]} castShadow>
+                      <boxGeometry args={[0.06, 0.25, hw - 0.1]} />
+                      <meshStandardMaterial color={hair} />
+                      <Outlines color={OUTLINE_COLOR} thickness={0.004} />
+                    </mesh>
+                    {/* the tapered tip of the bob */}
+                    <mesh position={[(hw / 2 + 0.03) * side, 0.262, -0.07]}>
+                      <boxGeometry args={[0.055, 0.07, hw - 0.19]} />
+                      <meshStandardMaterial color={palette.hairShade} />
+                    </mesh>
+                  </group>
+                ))}
+                {/* back of the hair, cut short into the nape */}
+                <mesh position={[0, 0.395, -(hw / 2 + 0.05)]} castShadow>
+                  <boxGeometry args={[hw + 0.02, 0.25, 0.11]} />
+                  <meshStandardMaterial color={hair} />
+                  <Outlines color={OUTLINE_COLOR} thickness={0.005} />
+                </mesh>
+                <mesh position={[0, 0.268, -(hw / 2 + 0.04)]}>
+                  <boxGeometry args={[hw - 0.08, 0.07, 0.09]} />
+                  <meshStandardMaterial color={palette.hairShade} />
+                </mesh>
+              </>
+            ) : (
+              <>
+                {/* fringe */}
+                <mesh position={[0, 0.44, faceZ - 0.02]}>
+                  <boxGeometry args={[hw + 0.02, 0.1, 0.09]} />
+                  <meshStandardMaterial color={hair} />
+                </mesh>
+                {/* sideburns */}
+                {[1, -1].map((side) => (
+                  <mesh key={side} position={[(hw / 2 + 0.015) * side, 0.4, 0]}>
+                    <boxGeometry args={[0.05, 0.16, hw - 0.02]} />
+                    <meshStandardMaterial color={hair} />
+                  </mesh>
+                ))}
+                {/* cropped back */}
+                <mesh position={[0, 0.395, -(hw / 2 + 0.02)]}>
+                  <boxGeometry args={[hw, 0.17, 0.06]} />
+                  <meshStandardMaterial color={palette.hairShade} />
+                </mesh>
+              </>
             )}
 
             {isFemale && (
-              <group position={[0, 0.34, 0.27]}>
-                <RoundedBox args={[0.23, 0.19, 0.025]} radius={0.03} smoothness={4} position={[-0.15, 0, 0]} castShadow>
-                  <meshStandardMaterial color="#1c1c1c" />
-                  <Outlines color={OUTLINE_COLOR} thickness={0.002} />
-                </RoundedBox>
-                <RoundedBox args={[0.23, 0.19, 0.025]} radius={0.03} smoothness={4} position={[0.15, 0, 0]} castShadow>
-                  <meshStandardMaterial color="#1c1c1c" />
-                  <Outlines color={OUTLINE_COLOR} thickness={0.002} />
-                </RoundedBox>
-                <RoundedBox args={[0.17, 0.13, 0.006]} radius={0.02} smoothness={4} position={[-0.15, 0, 0.017]}>
-                  <meshStandardMaterial color="#dbe9f5" transparent opacity={0.55} roughness={0.15} />
-                </RoundedBox>
-                <RoundedBox args={[0.17, 0.13, 0.006]} radius={0.02} smoothness={4} position={[0.15, 0, 0.017]}>
-                  <meshStandardMaterial color="#dbe9f5" transparent opacity={0.55} roughness={0.15} />
-                </RoundedBox>
-                <mesh position={[0, 0, 0]} castShadow>
-                  <boxGeometry args={[0.08, 0.025, 0.02]} />
-                  <meshStandardMaterial color="#1c1c1c" />
-                </mesh>
-                <mesh position={[-0.28, 0, -0.09]} rotation={[0, 0.3, 0]} castShadow>
-                  <boxGeometry args={[0.02, 0.02, 0.18]} />
-                  <meshStandardMaterial color="#1c1c1c" />
-                </mesh>
-                <mesh position={[0.28, 0, -0.09]} rotation={[0, -0.3, 0]} castShadow>
-                  <boxGeometry args={[0.02, 0.02, 0.18]} />
-                  <meshStandardMaterial color="#1c1c1c" />
+              /* glasses */
+              <group position={[0, 0.34, faceZ + 0.022]}>
+                {[1, -1].map((side) => (
+                  <group key={side} position={[0.132 * side, 0, 0]}>
+                    {[0.079, -0.079].map((y) => (
+                      <mesh key={y} position={[0, y, 0]}>
+                        <boxGeometry args={[0.196, 0.022, 0.022]} />
+                        <meshStandardMaterial color="#2a2a2e" />
+                      </mesh>
+                    ))}
+                    {[0.087, -0.087].map((x) => (
+                      <mesh key={x} position={[x, 0, 0]}>
+                        <boxGeometry args={[0.022, 0.18, 0.022]} />
+                        <meshStandardMaterial color="#2a2a2e" />
+                      </mesh>
+                    ))}
+                    <mesh position={[0, 0, 0.006]}>
+                      <boxGeometry args={[0.175, 0.16, 0.006]} />
+                      <meshStandardMaterial
+                        color="#dbe9f5"
+                        transparent
+                        opacity={0.16}
+                        roughness={0.12}
+                      />
+                    </mesh>
+                    {/* temple arm */}
+                    <mesh position={[0.128 * side, 0.01, -0.075]} rotation={[0, -0.3 * side, 0]}>
+                      <boxGeometry args={[0.018, 0.018, 0.16]} />
+                      <meshStandardMaterial color="#2a2a2e" />
+                    </mesh>
+                  </group>
+                ))}
+                {/* bridge */}
+                <mesh position={[0, 0.02, 0]}>
+                  <boxGeometry args={[0.075, 0.02, 0.018]} />
+                  <meshStandardMaterial color="#2a2a2e" />
                 </mesh>
               </group>
             )}
           </group>
 
           {/* arms pivot at the shoulders */}
-          <group ref={paddleArmRef} position={[0.5, SHOULDER_Y - HIP_Y, 0]}>
+          <group ref={paddleArmRef} position={[build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
             {arm(true)}
             {holdsPaddle && (
               <PickleballPaddle
@@ -797,7 +1096,7 @@ function BlockyPerson({
               />
             )}
           </group>
-          <group ref={freeArmRef} position={[-0.5, SHOULDER_Y - HIP_Y, 0]}>
+          <group ref={freeArmRef} position={[-build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
             {arm(false)}
           </group>
         </group>
@@ -817,14 +1116,16 @@ const PLAYER_B_ROTATION_Y = Math.atan2(PLAYER_A_POS[0] - PLAYER_B_POS[0], PLAYER
 
 /** Where the paddle face actually is, in the player's own space, at the
  * moment of contact - measured from the rig rather than guessed, so the
- * ball meets the paddle instead of flying past it. */
-const CONTACT_OFFSET: [number, number, number] = [0.5, 1.1, 0.17]
-
+ * ball meets the paddle instead of flying past it. The paddle hangs off the
+ * shoulder, so the narrower build reaches a little less far. */
 function contactPoint(
   pos: [number, number, number],
   rotationY: number,
+  build: Build,
 ): { x: number; y: number; z: number } {
-  const [ox, oy, oz] = CONTACT_OFFSET
+  const ox = build.shoulderHalf
+  const oy = 1.1
+  const oz = 0.17
   const cos = Math.cos(rotationY)
   const sin = Math.sin(rotationY)
   return {
@@ -834,8 +1135,8 @@ function contactPoint(
   }
 }
 
-const CONTACT_A = contactPoint(PLAYER_A_POS, PLAYER_A_ROTATION_Y)
-const CONTACT_B = contactPoint(PLAYER_B_POS, PLAYER_B_ROTATION_Y)
+const CONTACT_A = contactPoint(PLAYER_A_POS, PLAYER_A_ROTATION_Y, MALE_BUILD)
+const CONTACT_B = contactPoint(PLAYER_B_POS, PLAYER_B_ROTATION_Y, FEMALE_BUILD)
 
 const RALLY: RallyConfig = {
   fromX: CONTACT_A.x,
@@ -850,10 +1151,26 @@ const RALLY: RallyConfig = {
 export function PeopleScene() {
   // Dark theme puts the match under floodlights; light theme keeps daylight.
   const night = useIsDarkTheme()
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [onScreen, setOnScreen] = useState(true)
+
+  // The rally animates every frame, which would keep a core busy the whole
+  // time the reader is further down the page. Stop the loop once it scrolls
+  // out of view and pick it back up on the way past.
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting), {
+      rootMargin: '150px',
+    })
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <div className="scene3d">
+    <div className="scene3d" ref={hostRef}>
       <Canvas
+        frameloop={onScreen ? 'always' : 'never'}
         shadows="soft"
         dpr={[1, 2]}
         camera={{ position: [3.2, 4.6, 10.5], fov: 50 }}
@@ -869,8 +1186,8 @@ export function PeopleScene() {
           skin="#e8b98d"
           skinShade="#d5a377"
           hair="#2b2118"
-          outfit="#2b3a55"
-          outfitAccent="#3f5372"
+          outfit="#496591"
+          outfitAccent="#26334a"
           isFemale={false}
           holdsPaddle
           paddleFaceColor="#c62828"
@@ -885,9 +1202,9 @@ export function PeopleScene() {
           rotationY={PLAYER_B_ROTATION_Y}
           skin="#f0c9a6"
           skinShade="#dcb08a"
-          hair="#5a3825"
-          outfit="#c2185b"
-          outfitAccent="#1c1c1c"
+          hair="#59331f"
+          outfit="#e34f83"
+          outfitAccent="#33384f"
           isFemale
           holdsPaddle
           paddleFaceColor="#2f9e6b"

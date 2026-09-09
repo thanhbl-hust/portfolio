@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -11,6 +11,7 @@ import { CodeBlock } from '../components/CodeBlock'
 import { SuggestedArticles } from '../components/SuggestedArticles'
 import { ArticleSidebar } from '../components/ArticleSidebar'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useModalDismiss } from '../hooks/useModalDismiss'
 import { useRevealChildren } from '../hooks/useRevealChildren'
 
 const MIN_HEADINGS_FOR_TOC = 2
@@ -24,14 +25,7 @@ export function ArticlePage() {
   const bodyRef = useRef<HTMLDivElement>(null)
   useRevealChildren(bodyRef, [article?.slug])
 
-  useEffect(() => {
-    if (!drawerOpen) return
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setDrawerOpen(false)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [drawerOpen])
+  useModalDismiss(drawerOpen, setDrawerOpen)
 
   if (!article) {
     return <Navigate to="/blogs" replace />

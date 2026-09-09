@@ -1,13 +1,16 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { PillNav } from './components/PillNav'
 import { Brand } from './components/Brand'
 import { ScrollProgress } from './components/ScrollProgress'
 import { TopControls } from './components/TopControls'
 import { BackToTop } from './components/BackToTop'
-import { PortfolioPage } from './pages/PortfolioPage'
-import { BlogsPage } from './pages/BlogsPage'
-import { ArticlePage } from './pages/ArticlePage'
+
+// Each route is its own chunk: the article page carries the markdown renderer
+// and highlight.js, which the other two pages never touch.
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })))
+const BlogsPage = lazy(() => import('./pages/BlogsPage').then((m) => ({ default: m.BlogsPage })))
+const ArticlePage = lazy(() => import('./pages/ArticlePage').then((m) => ({ default: m.ArticlePage })))
 
 // Scroll position doesn't reset automatically on client-side navigation,
 // which would leave a new (differently sized) page landing mid-scroll and
@@ -31,11 +34,13 @@ export default function App() {
       <BackToTop />
       <div className="page">
         <main className="content">
-          <Routes>
-            <Route path="/" element={<PortfolioPage />} />
-            <Route path="/blogs" element={<BlogsPage />} />
-            <Route path="/article/:slug" element={<ArticlePage />} />
-          </Routes>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/" element={<PortfolioPage />} />
+              <Route path="/blogs" element={<BlogsPage />} />
+              <Route path="/article/:slug" element={<ArticlePage />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <footer className="topnav">

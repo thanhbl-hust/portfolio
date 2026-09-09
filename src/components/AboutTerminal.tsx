@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
+
+import { useModalDismiss } from '../hooks/useModalDismiss'
 
 type Token = { text: string; cls?: string }
 type Line = Token[]
@@ -44,6 +47,8 @@ const FILE_KEYS = Object.keys(FILES) as FileKey[]
 
 export function AboutTerminal() {
   const [active, setActive] = useState<FileKey>('about')
+  const [photoOpen, setPhotoOpen] = useState(false)
+  useModalDismiss(photoOpen, setPhotoOpen)
 
   return (
     <div className="terminal">
@@ -61,7 +66,14 @@ export function AboutTerminal() {
       </div>
 
       <div className="terminal__body">
-        <img src="avatar.jpg" alt="Bui Lam Thanh" className="terminal__avatar" />
+        <button
+          type="button"
+          className="terminal__avatar"
+          onClick={() => setPhotoOpen(true)}
+          aria-label="Open full photo"
+        >
+          <img src="avatar-64.webp" alt="Bui Lam Thanh" width={64} height={64} decoding="async" />
+        </button>
 
         {/* Every file is rendered and stacked in the same grid cell, so the body
           * keeps the height of the tallest one instead of collapsing when you
@@ -98,6 +110,33 @@ export function AboutTerminal() {
       <div className="terminal__statusbar">
         <span className="terminal__filename">{FILES[active].filename}</span>
       </div>
+
+      {/* The full photo goes through a portal: .terminal clips its overflow and
+        * grows a transform on hover, and either one would trap a fixed overlay
+        * inside the card. It is only mounted while open so the full-size image
+        * is not downloaded until someone asks for it. */}
+      {photoOpen &&
+        createPortal(
+          <div
+            className="photo-lightbox"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bui Lam Thanh"
+            tabIndex={-1}
+            ref={(node) => {
+              node?.focus()
+            }}
+            onClick={() => setPhotoOpen(false)}
+          >
+            <img
+              src="avatar.jpg"
+              alt="Bui Lam Thanh"
+              className="photo-lightbox__image"
+              onClick={(event) => event.stopPropagation()}
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

@@ -1,8 +1,13 @@
-import { useRef } from 'react'
+import { Suspense, lazy, useRef } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useRevealChildren } from '../hooks/useRevealChildren'
 import { AboutTerminal } from '../components/AboutTerminal'
-import { PeopleScene } from '../components/PeopleScene'
+
+// three.js and its helpers are the bulk of the bundle and nothing but this
+// scene uses them, so they load after the page is already on screen.
+const PeopleScene = lazy(() =>
+  import('../components/PeopleScene').then((m) => ({ default: m.PeopleScene })),
+)
 
 export function PortfolioPage() {
   useDocumentTitle('Bui Lam Thanh')
@@ -11,7 +16,10 @@ export function PortfolioPage() {
 
   return (
     <article className="article">
-      <PeopleScene />
+      {/* the fallback keeps the scene's 360px slot, so nothing jumps when it lands */}
+      <Suspense fallback={<div className="scene3d" />}>
+        <PeopleScene />
+      </Suspense>
 
       <AboutTerminal />
 
