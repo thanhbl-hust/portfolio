@@ -16,6 +16,8 @@
   --color-syntax-number: #3f7d4a;
 
   --content-max-width: 700px;
+  /* The fixed top bar paints over the page, so content has to start below it. */
+  --top-bar-height: 4.5rem;
 
   color-scheme: light;
 }
@@ -111,7 +113,7 @@ a:hover {
   top: 0;
   left: 0;
   right: 0;
-  height: 4.5rem;
+  height: var(--top-bar-height);
   background: var(--color-bg);
   z-index: 25;
 }
@@ -262,7 +264,7 @@ a:hover {
   width: 100%;
   max-width: var(--content-max-width);
   margin: 0 auto;
-  padding: 2.5rem 2rem 7rem;
+  padding: calc(var(--top-bar-height) + 1rem) 2rem 7rem;
 }
 
 .theme-toggle {
@@ -722,8 +724,19 @@ a:hover {
 
 .terminal__body {
   position: relative;
+  display: grid;
   background: var(--color-bg-raised);
   padding: 1.5rem 1.5rem 1.75rem;
+}
+
+/* The files share one grid cell so the body always keeps the height of the
+ * tallest one - switching tabs must not make the block jump. */
+.terminal__pane {
+  grid-area: 1 / 1;
+}
+
+.terminal__pane--hidden {
+  visibility: hidden;
 }
 
 .terminal__line {
@@ -816,11 +829,6 @@ a:hover {
   color: #eef4fb;
   font-size: 0.75rem;
   padding: 0.4rem 1rem;
-}
-
-.terminal__mode {
-  font-weight: 700;
-  letter-spacing: 0.03em;
 }
 
 .terminal__filename {
@@ -1061,7 +1069,7 @@ a:hover {
   }
 
   .content {
-    padding: 4rem 1.25rem 6rem;
+    padding: calc(var(--top-bar-height) + 0.75rem) 1.25rem 6rem;
   }
 
   .article__title {

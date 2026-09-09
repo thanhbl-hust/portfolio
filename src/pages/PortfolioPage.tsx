@@ -25,10 +25,11 @@ export function PortfolioPage() {
 
         <h2 id="skills">Skills</h2>
         <ul>
-          <li>Languages: Go, Python, TypeScript</li>
-          <li>Infrastructure: Kubernetes, Docker, Terraform</li>
-          <li>CI/CD: GitLab CI, GitHub Actions, Jenkins</li>
-          <li>Cloud: AWS, GCP</li>
+          <li>Cloud: AWS</li>
+          <li>Infrastructure: Terraform (TFLint, tfsec, Checkov), Docker, Kubernetes, Helm, Kafka, Message Queues</li>
+          <li>CI/CD: GitHub Actions, Jenkins, ArgoCD</li>
+          <li>Observability & Security: Prometheus, Grafana, ELK, Opentelemetry,FluentBit, Trivy, Gitleaks</li>
+          <li>Languages: Python, Bash, YAML</li>
         </ul>
 
         <h2 id="projects">Projects</h2>

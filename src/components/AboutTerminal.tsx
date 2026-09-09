@@ -34,21 +34,21 @@ const FILES: Record<FileKey, { label: string; filename: string; lines: Line[]; s
         { text: '# ', cls: 'tok-heading-mark' },
         { text: 'Role', cls: 'tok-heading' },
       ],
+      [],
       [{ text: 'DevOps Engineer in Hanoi', cls: 'tok-heading' }],
     ],
   },
 }
 
+const FILE_KEYS = Object.keys(FILES) as FileKey[]
+
 export function AboutTerminal() {
   const [active, setActive] = useState<FileKey>('about')
-  const file = FILES[active]
-  const lastLineIndex = file.lines.length - 1
-  const lastLineLength = file.lines[lastLineIndex].reduce((sum, token) => sum + token.text.length, 0)
 
   return (
     <div className="terminal">
       <div className="terminal__tabs">
-        {(Object.keys(FILES) as FileKey[]).map((key) => (
+        {FILE_KEYS.map((key) => (
           <button
             key={key}
             type="button"
@@ -63,29 +63,40 @@ export function AboutTerminal() {
       <div className="terminal__body">
         <img src="avatar.jpg" alt="Bui Lam Thanh" className="terminal__avatar" />
 
-        {file.lines.map((line, i) => (
-          <div className="terminal__line" key={i}>
-            <span className="terminal__lineno">{i + 1}</span>
-            <span className="terminal__code">
-              {line.length === 0
-                ? ' '
-                : line.map((token, j) => (
-                  <span key={j} className={token.cls}>
-                    {token.text}
+        {/* Every file is rendered and stacked in the same grid cell, so the body
+          * keeps the height of the tallest one instead of collapsing when you
+          * switch tabs. */}
+        {FILE_KEYS.map((key) => {
+          const file = FILES[key]
+          const lastLineIndex = file.lines.length - 1
+          return (
+            <div
+              key={key}
+              className={`terminal__pane${key === active ? '' : ' terminal__pane--hidden'}`}
+              aria-hidden={key !== active}
+            >
+              {file.lines.map((line, i) => (
+                <div className="terminal__line" key={i}>
+                  <span className="terminal__lineno">{i + 1}</span>
+                  <span className="terminal__code">
+                    {line.length === 0
+                      ? ' '
+                      : line.map((token, j) => (
+                        <span key={j} className={token.cls}>
+                          {token.text}
+                        </span>
+                      ))}
+                    {file.showCursor && i === lastLineIndex && <span className="terminal__cursor" />}
                   </span>
-                ))}
-              {file.showCursor && i === lastLineIndex && <span className="terminal__cursor" />}
-            </span>
-          </div>
-        ))}
+                </div>
+              ))}
+            </div>
+          )
+        })}
       </div>
 
       <div className="terminal__statusbar">
-        <span className="terminal__mode">NORMAL</span>
-        <span className="terminal__filename">{file.filename}</span>
-        <span className="terminal__pos">
-          {lastLineIndex + 1}:{file.showCursor ? lastLineLength + 1 : 1}
-        </span>
+        <span className="terminal__filename">{FILES[active].filename}</span>
       </div>
     </div>
   )
