@@ -499,6 +499,65 @@ const FEMALE_BUILD: Build = {
   headWidth: 0.5,
 }
 
+/* The stroke, as keyframes on the seconds-to-contact axis. At module scope so
+ * the renderer and the ball's trajectory read the same numbers. */
+
+/** Wind up behind the body, whip through contact at dt = 0, then follow
+ * through and relax: an asymmetric swing rather than a symmetric pulse. */
+const SWING_KEYS: [number, number][] = [
+  [-0.75, 0],
+  [-0.34, -1.15],
+  [-0.1, -0.95],
+  [0, 0.2],
+  [0.22, 0.85],
+  [0.7, 0],
+]
+
+const TWIST_KEYS: [number, number][] = [
+  [-0.75, 0],
+  [-0.34, 0.32],
+  [0, -0.12],
+  [0.24, -0.38],
+  [0.7, 0],
+]
+
+/** Split step: a small hop up, then a landing into a bent-knee ready stance. */
+const HOP_KEYS: [number, number][] = [
+  [-0.34, 0],
+  [-0.13, 0.12],
+  [0, 0.03],
+  [0.13, 0],
+  [0.45, 0],
+]
+
+const CROUCH_KEYS: [number, number][] = [
+  [-0.34, 0],
+  [0, 0.06],
+  [0.14, 0.34],
+  [0.5, 0.1],
+]
+
+/** Step into the shot with the front leg; the back leg trails. */
+const STRIDE_KEYS: [number, number][] = [
+  [-0.6, 0],
+  [-0.22, -0.28],
+  [0.06, 0.3],
+  [0.55, 0],
+]
+
+/* The paddle is held head-down in the right hand, grip running up through the
+ * fist, so the stroke is an underhand sweep: the arm pitches the opposite way
+ * to an overhand rig, and the shoulder hangs a little away from the body to
+ * keep the head clear of the leg (and of her skirt). */
+const PADDLE_POSITION: [number, number, number] = [-0.05, -0.6, 0.05]
+const PADDLE_ROTATION: [number, number, number] = [-0.25, 0, Math.PI + 0.12]
+/** Height of the face's centre within the paddle model. */
+const PADDLE_FACE_Y = 0.475
+
+const armPitch = (swing: number) => -swing
+const paddleArmRoll = (swing: number) => clamp(-0.15 + swing * 0.12, -0.5, 0.2)
+const freeArmRoll = (swing: number) => clamp(0.15 - swing * 0.12, -0.2, 0.5)
+
 // Torso blocks, measured up from the hips (the torso group's own origin).
 const HIPS_Y = 0.085
 const WAIST_Y = 0.295
@@ -556,46 +615,11 @@ function BlockyPerson({
     const dtHit = timeToEvent(t, swingHitTime, swingPeriod)
     const dtSplit = timeToEvent(t, swingHitTime + cycle, swingPeriod)
 
-    // Wind up behind the body, whip through contact at dt = 0, then follow
-    // through and relax: an asymmetric swing rather than a symmetric pulse.
-    const swing = keyframe(dtHit, [
-      [-0.75, 0],
-      [-0.34, -1.15],
-      [-0.1, -0.95],
-      [0, 0.2],
-      [0.22, 0.85],
-      [0.7, 0],
-    ])
-    const twist = keyframe(dtHit, [
-      [-0.75, 0],
-      [-0.34, 0.32],
-      [0, -0.12],
-      [0.24, -0.38],
-      [0.7, 0],
-    ])
-
-    // Split step: small hop up, then land into a bent-knee ready stance.
-    const hop = keyframe(dtSplit, [
-      [-0.34, 0],
-      [-0.13, 0.12],
-      [0, 0.03],
-      [0.13, 0],
-      [0.45, 0],
-    ])
-    const crouch = keyframe(dtSplit, [
-      [-0.34, 0],
-      [0, 0.06],
-      [0.14, 0.34],
-      [0.5, 0.1],
-    ])
-
-    // Step into the shot with the front leg, back leg trails.
-    const stride = keyframe(dtHit, [
-      [-0.6, 0],
-      [-0.22, -0.28],
-      [0.06, 0.3],
-      [0.55, 0],
-    ])
+    const swing = keyframe(dtHit, SWING_KEYS)
+    const twist = keyframe(dtHit, TWIST_KEYS)
+    const hop = keyframe(dtSplit, HOP_KEYS)
+    const crouch = keyframe(dtSplit, CROUCH_KEYS)
+    const stride = keyframe(dtHit, STRIDE_KEYS)
 
     // Bouncing on the toes: always at or above the court, never below it.
     const idleBob = (Math.sin(t * 2.6 + idleSeed) * 0.5 + 0.5) * 0.02
@@ -608,7 +632,7 @@ function BlockyPerson({
       root.position.y = Math.max(0, idleBob + hop)
       root.rotation.z = idleSway
       // Lean into the shot a little as the swing comes through.
-      root.rotation.x = clamp(-swing * 0.06, -0.12, 0.12)
+      root.rotation.x = clamp(-armPitch(swing) * 0.06, -0.12, 0.12)
     }
 
     const torso = torsoRef.current
@@ -621,15 +645,15 @@ function BlockyPerson({
 
     const paddleArm = paddleArmRef.current
     if (paddleArm) {
-      paddleArm.rotation.x = swing
-      paddleArm.rotation.z = clamp(-0.25 - swing * 0.18, -0.7, 0.2)
+      paddleArm.rotation.x = armPitch(swing)
+      paddleArm.rotation.z = paddleArmRoll(swing)
     }
 
     const freeArm = freeArmRef.current
     if (freeArm) {
       // Counter-balances the swinging arm.
-      freeArm.rotation.x = -swing * 0.45
-      freeArm.rotation.z = clamp(0.25 + swing * 0.12, -0.2, 0.7)
+      freeArm.rotation.x = -armPitch(swing) * 0.45
+      freeArm.rotation.z = freeArmRoll(swing)
     }
 
     const legFront = legFrontRef.current
@@ -1084,19 +1108,21 @@ function BlockyPerson({
           </group>
 
           {/* arms pivot at the shoulders */}
-          <group ref={paddleArmRef} position={[build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
+          {/* the paddle hand is the right one, which is -x for a figure
+            * facing its own +z */}
+          <group ref={paddleArmRef} position={[-build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
             {arm(true)}
             {holdsPaddle && (
               <PickleballPaddle
-                position={[0.05, -0.76, 0.05]}
-                rotation={[0.25, 0, -0.1]}
+                position={PADDLE_POSITION}
+                rotation={PADDLE_ROTATION}
                 faceColor={paddleFaceColor}
                 faceShade={paddleFaceShade}
                 gripColor={paddleGripColor}
               />
             )}
           </group>
-          <group ref={freeArmRef} position={[-build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
+          <group ref={freeArmRef} position={[build.shoulderHalf, SHOULDER_Y - HIP_Y, 0]}>
             {arm(false)}
           </group>
         </group>
@@ -1114,18 +1140,42 @@ const PLAYER_B_POS: [number, number, number] = [1.4, 0, -6.2]
 const PLAYER_A_ROTATION_Y = Math.atan2(PLAYER_B_POS[0] - PLAYER_A_POS[0], PLAYER_B_POS[2] - PLAYER_A_POS[2])
 const PLAYER_B_ROTATION_Y = Math.atan2(PLAYER_A_POS[0] - PLAYER_B_POS[0], PLAYER_A_POS[2] - PLAYER_B_POS[2])
 
-/** Where the paddle face actually is, in the player's own space, at the
- * moment of contact - measured from the rig rather than guessed, so the
- * ball meets the paddle instead of flying past it. The paddle hangs off the
- * shoulder, so the narrower build reaches a little less far. */
+/** Where the paddle face actually is, in the player's own space, at the moment
+ * of contact. Rebuilt from the same transforms the renderer uses rather than
+ * measured by hand, so re-posing the grip can never leave the ball flying past
+ * the paddle. */
+function contactOffset(build: Build): Vector3 {
+  const swing = keyframe(0, SWING_KEYS)
+
+  const torso = new Object3D()
+  torso.position.set(0, HIP_Y, 0)
+  torso.rotation.y = keyframe(0, TWIST_KEYS)
+
+  const arm = new Object3D()
+  arm.position.set(-build.shoulderHalf, SHOULDER_Y - HIP_Y, 0)
+  arm.rotation.x = armPitch(swing)
+  arm.rotation.z = paddleArmRoll(swing)
+  torso.add(arm)
+
+  const paddle = new Object3D()
+  paddle.position.set(...PADDLE_POSITION)
+  paddle.rotation.set(...PADDLE_ROTATION)
+  arm.add(paddle)
+
+  const face = new Object3D()
+  face.position.set(0, PADDLE_FACE_Y, 0)
+  paddle.add(face)
+
+  torso.updateWorldMatrix(false, true)
+  return face.getWorldPosition(new Vector3())
+}
+
 function contactPoint(
   pos: [number, number, number],
   rotationY: number,
   build: Build,
 ): { x: number; y: number; z: number } {
-  const ox = build.shoulderHalf
-  const oy = 1.1
-  const oz = 0.17
+  const { x: ox, y: oy, z: oz } = contactOffset(build)
   const cos = Math.cos(rotationY)
   const sin = Math.sin(rotationY)
   return {

@@ -14,6 +14,8 @@
   --color-code-fg: var(--color-ink);
   --color-syntax-keyword: #8250df;
   --color-syntax-number: #3f7d4a;
+  --model-glow: rgba(29, 95, 174, 0.34);
+  --model-glow-soft: rgba(29, 95, 174, 0.16);
 
   --content-max-width: 700px;
   /* The fixed top bar paints over the page, so content has to start below it. */
@@ -36,6 +38,8 @@
   --color-code-fg: #d1d9e3;
   --color-syntax-keyword: #c297ff;
   --color-syntax-number: #8fbc74;
+  --model-glow: rgba(125, 176, 242, 0.42);
+  --model-glow-soft: rgba(125, 176, 242, 0.2);
 
   color-scheme: dark;
 }
@@ -674,6 +678,21 @@ a:hover {
   height: 360px;
   margin: 0 0 2rem;
   cursor: grab;
+  transition: filter 0.25s ease;
+}
+
+/* drop-shadow blurs the canvas' own pixels, so the glow follows the court and
+ * the players themselves - a box-shadow would draw a rectangle around the
+ * whole 360px slot instead. Needs the canvas to stay transparent (alpha: true).
+ */
+.scene3d:hover {
+  filter: drop-shadow(0 0 12px var(--model-glow)) drop-shadow(0 0 30px var(--model-glow-soft));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene3d {
+    transition: none;
+  }
 }
 
 .scene3d:active {
@@ -1119,6 +1138,17 @@ a:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .article__body > *,
+  .blog-list > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Nothing has scrolled into view on a printed page, so without this the reveal
+ * would send most of the article to the printer as blank space. */
+@media print {
   .article__body > *,
   .blog-list > * {
     opacity: 1;
