@@ -102,23 +102,39 @@ export const articles: Article[] = Object.entries(rawModules)
       body,
     }
   })
-  .sort((a, b) => a.tag.localeCompare(b.tag) || a.title.localeCompare(b.title))
+  // Newest first, matching the RSS feed. Undated drafts sink to the bottom.
+  .sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title))
 
 export function getArticle(slug: string): Article | undefined {
   return articles.find((article) => article.slug === slug)
 }
 
-function shuffle<T>(items: T[]): T[] {
+/** FNV-1a, used to turn a slug into a shuffle seed. */
+function hashSeed(text: string): number {
+  let hash = 2166136261
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return hash >>> 0
+}
+
+/** Shuffled, but seeded rather than random: each article gets its own order and
+ * keeps it. `Math.random()` here would re-pick the suggestions on every render,
+ * so they visibly swapped around while reading. */
+function seededShuffle<T>(items: T[], seed: number): T[] {
   const copy = [...items]
+  let state = seed || 1
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
+    state = (Math.imul(state, 1103515245) + 12345) >>> 0
+    const j = state % (i + 1)
     ;[copy[i], copy[j]] = [copy[j], copy[i]]
   }
   return copy
 }
 
-/** Suggests other articles to read next: same-tag articles first (shuffled),
- * topped up with random picks from the rest if there aren't enough. */
+/** Suggests other articles to read next: same-tag articles first, topped up
+ * from the rest if there aren't enough. Stable for a given article. */
 export function getSuggestedArticles(slug: string, count = 2): Article[] {
   const current = getArticle(slug)
   if (!current) return []
@@ -127,5 +143,6 @@ export function getSuggestedArticles(slug: string, count = 2): Article[] {
   const sameTag = current.tag ? others.filter((article) => article.tag === current.tag) : []
   const rest = others.filter((article) => !sameTag.includes(article))
 
-  return [...shuffle(sameTag), ...shuffle(rest)].slice(0, count)
+  const seed = hashSeed(slug)
+  return [...seededShuffle(sameTag, seed), ...seededShuffle(rest, seed)].slice(0, count)
 }

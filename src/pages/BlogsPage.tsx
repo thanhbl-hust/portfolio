@@ -10,10 +10,13 @@ export function BlogsPage() {
   useRevealChildren(listRef)
 
   return (
-    <div className="blog-list" ref={listRef}>
-      {articles.map((article) => (
-        <BlogCard key={article.slug} article={article} />
-      ))}
-    </div>
+    <>
+      <h1 className="visually-hidden">Blog posts</h1>
+      <div className="blog-list" ref={listRef}>
+        {articles.map((article) => (
+          <BlogCard key={article.slug} article={article} />
+        ))}
+      </div>
+    </>
   )
 }

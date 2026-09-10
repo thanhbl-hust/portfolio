@@ -15,6 +15,7 @@ content/docker-security.md
 ---
 title: "Docker Security Basics"
 date: "2026-09-10"
+tag: "Docker"
 ---
 
 ## Introduction
@@ -33,7 +34,8 @@ git push
 That's it. The build automatically:
 
 - discovers every `content/*.md` file
-- reads `title` / `date` from the frontmatter
+- reads `title` / `date` / `tag` from the frontmatter (`tag` becomes the pill on the card)
+- lists articles newest first, by `date`
 - adds an entry to the sidebar
 - generates the article's URL (`#/article/docker-security`)
 - renders the article and its Table of Contents (from `##`/`###` headings)

@@ -16,6 +16,10 @@ export function PortfolioPage() {
 
   return (
     <article className="article">
+      {/* The visible page starts at h2; this gives it the one h1 a page needs
+        * without changing the design. */}
+      <h1 className="visually-hidden">Bui Lam Thanh &mdash; DevOps Engineer</h1>
+
       {/* the fallback keeps the scene's 360px slot, so nothing jumps when it lands */}
       <Suspense fallback={<div className="scene3d" />}>
         <PeopleScene />
@@ -64,25 +68,6 @@ export function PortfolioPage() {
           <br />
           One line on scope and impact.
         </p>
-
-        <h2 id="contact">Contact / Links</h2>
-        <ul>
-          <li>
-            Email: <a href="mailto:lamthanhbui02@gmail.com">lamthanhbui02@gmail.com</a>
-          </li>
-          <li>
-            GitHub:{' '}
-            <a href="https://github.com/thanhbl-hust" target="_blank" rel="noopener noreferrer">
-              github.com/thanhbl-hust
-            </a>
-          </li>
-          <li>
-            LinkedIn:{' '}
-            <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer">
-              linkedin.com/in/yourusername
-            </a>
-          </li>
-        </ul>
       </div>
     </article>
   )

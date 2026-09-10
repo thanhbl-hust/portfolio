@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { HashRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { PillNav } from './components/PillNav'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { Brand } from './components/Brand'
 import { ScrollProgress } from './components/ScrollProgress'
 import { TopControls } from './components/TopControls'
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="/" element={<PortfolioPage />} />
               <Route path="/blogs" element={<BlogsPage />} />
               <Route path="/article/:slug" element={<ArticlePage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
         </main>

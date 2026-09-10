@@ -1,10 +1,10 @@
-import { GithubLink } from './GithubLink'
+import { SocialLinks } from './SocialLinks'
 import { ThemeToggle } from './ThemeToggle'
 
 export function TopControls() {
   return (
     <div className="top-controls">
-      <GithubLink />
+      <SocialLinks />
       <ThemeToggle />
     </div>
   )
