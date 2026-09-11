@@ -12,7 +12,7 @@ export function BlogsPage() {
   return (
     <>
       <h1 className="visually-hidden">Blog posts</h1>
-      <div className="blog-list" ref={listRef}>
+      <div className="blog-list blog-list--grid" ref={listRef}>
         {articles.map((article) => (
           <BlogCard key={article.slug} article={article} />
         ))}

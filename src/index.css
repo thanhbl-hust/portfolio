@@ -16,6 +16,12 @@
   --color-syntax-number: #3f7d4a;
   --model-glow: rgba(29, 95, 174, 0.34);
   --model-glow-soft: rgba(29, 95, 174, 0.16);
+  /* The floating bottom nav gets surfaces of its own: it used to share
+     --color-bg-raised with blog cards and code blocks, and vanished over them. */
+  --nav-surface: rgba(255, 255, 255, 0.78);
+  --nav-border: #7fa4d1;
+  --nav-hover: rgba(29, 95, 174, 0.1);
+  --nav-shadow: 0 10px 30px rgba(15, 35, 70, 0.18), 0 2px 8px rgba(15, 35, 70, 0.1);
 
   --content-max-width: 700px;
   /* The fixed top bar paints over the page, so content has to start below it. */
@@ -40,6 +46,12 @@
   --color-syntax-number: #8fbc74;
   --model-glow: rgba(125, 176, 242, 0.42);
   --model-glow-soft: rgba(125, 176, 242, 0.2);
+  --nav-surface: rgba(36, 50, 68, 0.86);
+  --nav-border: #466388;
+  --nav-hover: rgba(125, 176, 242, 0.16);
+  /* A black drop shadow barely registers on a near-black page, so the dark
+     theme leans on a faint accent halo instead. */
+  --nav-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 22px rgba(125, 176, 242, 0.1);
 
   color-scheme: dark;
 }
@@ -179,10 +191,15 @@ a:hover {
   align-items: center;
   gap: 0.75rem;
   padding: 0.4rem 0.9rem;
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
+  /* Frosted rather than just a different shade: in the light theme even pure
+     white is only 1.06:1 against the page, so what keeps the nav legible over
+     a card or a code block is the blur of whatever is behind it. */
+  background: var(--nav-surface);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid var(--nav-border);
   border-radius: 999px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--nav-shadow);
   z-index: 30;
 }
 
@@ -280,7 +297,7 @@ a:hover {
 
 .pill-nav__link:hover {
   color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--nav-hover);
 }
 
 .pill-nav__link--active,
@@ -415,6 +432,24 @@ a:hover {
   z-index: 20;
 }
 
+.article-toc--desktop {
+  display: none;
+  position: fixed;
+  top: 6.5rem;
+  right: calc(50% + (var(--content-max-width) / 2) + 2.5rem);
+  width: 240px;
+  max-height: calc(100vh - 9rem);
+  overflow-y: auto;
+  z-index: 20;
+}
+
+/* In the drawer the contents come first, set off from All Posts below. */
+.article-drawer__toc {
+  margin: 0 0 1.75rem;
+  padding: 0 0 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .article-sidebar__heading {
   margin: 0 0 1rem;
   font-size: 0.75rem;
@@ -522,7 +557,8 @@ a:hover {
     display: none;
   }
 
-  .article-sidebar--desktop {
+  .article-sidebar--desktop,
+  .article-toc--desktop {
     display: block;
   }
 }
@@ -533,14 +569,14 @@ a:hover {
   font-size: 1.35rem;
   font-weight: 600;
   margin: 2.5rem 0 1rem;
-  scroll-margin-top: 1.5rem;
+  scroll-margin-top: calc(var(--top-bar-height) + 1rem);
 }
 
 .article__body h3 {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 2rem 0 0.75rem;
-  scroll-margin-top: 1.5rem;
+  scroll-margin-top: calc(var(--top-bar-height) + 1rem);
 }
 
 .article__body p {
@@ -555,6 +591,17 @@ a:hover {
 
 .article__body li {
   margin-bottom: 0.4rem;
+}
+
+/* A GFM checklist brings its own checkbox; the bullet next to it is noise. */
+.article__body .contains-task-list {
+  list-style: none;
+  padding-left: 0.2rem;
+}
+
+.article__body .task-list-item input {
+  margin-right: 0.55rem;
+  accent-color: var(--color-accent);
 }
 
 .article__body img {
@@ -993,20 +1040,14 @@ a:hover {
 
 /* ---------- table of contents ---------- */
 
-.toc {
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  padding: 1.25rem 1.5rem;
-  margin: 0 0 2.5rem;
-  background: var(--color-bg-raised);
-}
-
+/* Lives in the left rail on wide screens and inside the drawer on narrow ones,
+ * never inline above the article. */
 .toc__heading {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.85rem;
+  letter-spacing: 0.06em;
   color: var(--color-ink-soft);
 }
 
@@ -1019,17 +1060,9 @@ a:hover {
 
 .toc__list > li {
   counter-increment: toc-counter;
-  margin: 0.3rem 0;
-}
-
-.toc__list > li > a::before {
-  content: counters(toc-counter, '.') '. ';
-  color: var(--color-ink-soft);
 }
 
 .toc__list .toc__list {
-  margin-top: 0.3rem;
-  margin-left: 1.25rem;
   counter-reset: toc-subcounter;
 }
 
@@ -1037,16 +1070,42 @@ a:hover {
   counter-increment: toc-subcounter;
 }
 
+/* Every entry sits on one continuous rail; the current section lights up its
+ * own stretch of it. */
+.toc a {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.8rem;
+  border-left: 2px solid var(--color-border);
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.toc__list .toc__list a {
+  padding-left: 1.6rem;
+  font-size: 0.78rem;
+}
+
+.toc__list > li > a::before {
+  content: counters(toc-counter, '.') '. ';
+}
+
 .toc__list .toc__list > li > a::before {
   content: counters(toc-counter, '.') '.' counter(toc-subcounter) ' ';
 }
 
-.toc a {
-  text-decoration: none;
+.toc a:hover {
+  color: var(--color-ink);
 }
 
-.toc a:hover {
-  text-decoration: underline;
+/* The section on screen right now (see useActiveHeading). The font is
+ * monospaced at every weight, so going bold never re-wraps the entry. */
+.toc a[aria-current='location'] {
+  border-left-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 600;
 }
 
 /* ---------- blog list ---------- */
@@ -1055,6 +1114,34 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+/* The blog index lays its cards out as a grid that wraps left to right, as many
+ * columns as fit (auto-fill), newest first. The min() keeps a card from
+ * overflowing a screen narrower than the minimum column. */
+.blog-list--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+  /* Every row as tall as the tallest card anywhere in the grid, not just in its
+   * own row - so all the cards come out the same size. */
+  grid-auto-rows: 1fr;
+}
+
+/* The index is the one page without side rails, so it takes the width a grid
+ * of cards needs; every other page keeps the narrow reading column. Without
+ * :has() it simply stays at that column's width, with two cards a row. */
+.content:has(> .blog-list--grid) {
+  max-width: 1080px;
+}
+
+/* Cards in a grid row all grow to the tallest one, so a long summary stretched
+ * its neighbours with it. Three lines is plenty for a teaser. */
+.blog-list--grid .blog-card__excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
 }
 
 .blog-card {

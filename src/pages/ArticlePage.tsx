@@ -10,6 +10,7 @@ import { TableOfContents } from '../components/TableOfContents'
 import { CodeBlock } from '../components/CodeBlock'
 import { SuggestedArticles } from '../components/SuggestedArticles'
 import { ArticleSidebar } from '../components/ArticleSidebar'
+import { useActiveHeading } from '../hooks/useActiveHeading'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useModalDismiss } from '../hooks/useModalDismiss'
 import { useRevealChildren } from '../hooks/useRevealChildren'
@@ -24,6 +25,9 @@ export function ArticlePage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
   useRevealChildren(bodyRef, [article?.slug])
+  // One scroll-spy feeding both copies of the contents: the left rail on wide
+  // screens and the one inside the drawer on narrow ones.
+  const { activeId: activeHeading, scrollToHeading } = useActiveHeading(toc)
 
   useModalDismiss(drawerOpen, setDrawerOpen)
 
@@ -38,6 +42,12 @@ export function ArticlePage() {
       <button type="button" className="blogs-toggle" onClick={() => setDrawerOpen(true)}>
         Blogs
       </button>
+
+      {showToc && (
+        <aside className="article-toc article-toc--desktop">
+          <TableOfContents items={toc} activeId={activeHeading} onSelect={scrollToHeading} />
+        </aside>
+      )}
 
       <aside className="article-sidebar article-sidebar--desktop">
         <ArticleSidebar currentSlug={article.slug} />
@@ -58,6 +68,18 @@ export function ArticlePage() {
           >
             ×
           </button>
+          {showToc && (
+            <div className="article-drawer__toc">
+              <TableOfContents
+                items={toc}
+                activeId={activeHeading}
+                onSelect={(id) => {
+                  scrollToHeading(id)
+                  setDrawerOpen(false)
+                }}
+              />
+            </div>
+          )}
           <ArticleSidebar currentSlug={article.slug} onNavigate={() => setDrawerOpen(false)} />
         </div>
       </div>
@@ -78,8 +100,6 @@ export function ArticlePage() {
             {article.tag && <span className="tag-pill">{article.tag}</span>}
           </div>
         </header>
-
-        {showToc && <TableOfContents items={toc} />}
 
         <div className="article__body" ref={bodyRef}>
           <ReactMarkdown

@@ -1,73 +1,33 @@
 ---
-title: "Kubernetes Basics: Pods, Deployments, Services"
-date: "2026-08-20"
+title: "Kubernetes - Cluster Architecture"
+date: "2026-01-01"
 tag: "Kubernetes"
 ---
 
 ## Architecture Overview
 
-Kubernetes is a container orchestration system built around a declarative model: you describe
-the desired state, and the control plane continuously reconciles the cluster toward it.
+**Kubernetes** là một nền tảng quản lý container mã nguồn mở (Container Orchestration), giúp tự động hóa việc triển khai, mở rộng, quản lý và phục hồi các ứng dụng đã được container hóa.
 
-### Control Plane
+## Control Plane
 
-The control plane is made up of a few core components:
+### kube-apiserver
 
-- `kube-apiserver` — the front door for every request
-- `etcd` — the cluster's source of truth
-- `kube-scheduler` — decides which node a Pod runs on
-- `kube-controller-manager` — runs the reconciliation loops
+**kube-apiserver** là trung tâm đầu não của cụm Kubernetes. Nó là front-end REST duy nhất cho control-plane, nơi tất cả component còn lại giao tiếp để đọc ghi state. Nó chịu trách nhiệm xác thực, phân quyền, validate request, và là thành phần duy nhất giao tiếp trực tiếp với etcd để lưu trữ state của cluster. 
 
-### Nodes
+### etcd
 
-Every node runs a `kubelet` and a container runtime. The `kubelet` talks to the API server and
-makes sure the containers described in its assigned Pods are actually running.
+**etcd** là kho lưu trữ state duy nhất của toàn bộ cluster — một distributed key-value store nhất quán (strongly consistent) dựa trên thuật toán Raft. Mọi thông tin về cluster (pods, services, configmaps, secrets, trạng thái nodes...) đều nằm ở đây. Chỉ có kube-apiserver được phép đọc/ghi trực tiếp vào etcd; không component nào khác kết nối thẳng tới nó.
 
-## Core Objects
+### kube-scheduler
 
-### Pods
+### kube-controller-manager
 
-A Pod is the smallest deployable unit. It usually wraps a single container, though it can hold
-more than one when they need to share network and storage.
+## Nodes
 
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: example-pod
-spec:
-  containers:
-    - name: app
-      image: nginx:1.27
-      ports:
-        - containerPort: 80
-```
+### kubelet
 
-### Deployments
+### kube-proxy
 
-A Deployment manages a set of replica Pods and handles rolling updates for you.
+### container-runtime
 
-```bash
-kubectl apply -f deployment.yaml
-kubectl rollout status deployment/example
-kubectl rollout undo deployment/example
-```
-
-### Services
-
-A Service gives a stable network identity to a set of Pods, since Pod IPs are ephemeral.
-
-| Service Type  | Use case                                  |
-| ------------- | ------------------------------------------|
-| ClusterIP     | Internal-only traffic                     |
-| NodePort      | Expose a port on every node                |
-| LoadBalancer  | Provision an external cloud load balancer  |
-
-> Rule of thumb: start with ClusterIP and only reach for LoadBalancer when you actually need
-> external traffic.
-
-## Conclusion
-
-Pods, Deployments, and Services cover most of what you need for a first production workload.
-Everything else &mdash; ConfigMaps, Secrets, Ingress, StatefulSets &mdash; builds on these same
-primitives.
+## Add-ons
