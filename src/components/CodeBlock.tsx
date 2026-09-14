@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import type { ComponentPropsWithoutRef } from 'react'
+import { useKeyboardScrollable } from '../hooks/useKeyboardScrollable'
 
 type CodeBlockProps = ComponentPropsWithoutRef<'pre'> & { node?: unknown }
 
 export function CodeBlock({ node: _node, children, ...rest }: CodeBlockProps) {
   const preRef = useRef<HTMLPreElement>(null)
   const [copied, setCopied] = useState(false)
+  useKeyboardScrollable(preRef)
 
   async function handleCopy() {
     const text = preRef.current?.textContent ?? ''

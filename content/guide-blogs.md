@@ -29,6 +29,7 @@ tag: "Docker"
 | `title` | yes | The article heading, and the browser tab title |
 | `date` | yes | `YYYY-MM-DD`. Posts are listed newest first |
 | `tag` | no | The small pill shown on the card and in the sidebar |
+| `lang` | no | `vi` or `en`. Left out, it's worked out from the text: any Vietnamese letter makes it `vi` |
 
 The first ordinary paragraph after the frontmatter becomes the summary on the blog card, trimmed to 160 characters. Headings, quotes, code and images are skipped when it looks for that paragraph, so open with a real sentence.
 
@@ -41,7 +42,7 @@ Start at `##`. The `title` in the frontmatter is already the page's top-level he
 ### Sub-section
 ```
 
-`##` and `###` are collected into the Table of Contents at the top of the article, which appears once a post has at least two of them. `####` and deeper still render, they just don't show up in the contents.
+`##` and `###` are collected into the Table of Contents beside the article (inside the Blogs drawer on narrower screens), which appears once a post has at least two of them. `####` and deeper still render, they just don't show up in the contents.
 
 ## Bold, italic and inline code
 

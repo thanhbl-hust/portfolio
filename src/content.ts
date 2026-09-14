@@ -3,6 +3,8 @@ export interface Article {
   title: string
   date: string
   tag: string
+  /** Language of the body text, for its `lang` attribute: 'vi' or 'en'. */
+  lang: string
   excerpt: string
   body: string
 }
@@ -83,6 +85,19 @@ function decodeHtmlEntities(text: string): string {
   return el.value
 }
 
+/** Letters Vietnamese has and English doesn't - ă â đ ê ô ơ ư and the
+ * tone-marked vowels. One of them anywhere and a post counts as Vietnamese,
+ * unless its frontmatter sets `lang` itself. */
+const VIETNAMESE_LETTERS = /[ăâđêôơưĂÂĐÊÔƠƯẠ-ỹ]/
+
+/** "2026-09-08" as "Sep 8, 2026" - how dates read everywhere on the site. */
+export function formatDate(iso: string): string {
+  if (!iso) return ''
+  const date = new Date(`${iso}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
 const rawModules = import.meta.glob('/content/*.md', {
   query: '?raw',
   import: 'default',
@@ -98,6 +113,7 @@ export const articles: Article[] = Object.entries(rawModules)
       title: data.title ?? titleFromBody(body) ?? slug,
       date: data.date ?? '',
       tag: data.tag ?? '',
+      lang: data.lang || (VIETNAMESE_LETTERS.test(body) ? 'vi' : 'en'),
       excerpt: extractExcerpt(body),
       body,
     }
@@ -108,6 +124,35 @@ export const articles: Article[] = Object.entries(rawModules)
 export function getArticle(slug: string): Article | undefined {
   return articles.find((article) => article.slug === slug)
 }
+
+export interface TagGroup {
+  tag: string
+  articles: Article[]
+}
+
+/** Where posts without a tag are filed. */
+const UNTAGGED = 'Other'
+
+/** The blog index, a section per tag: the tags with the most posts first (ties
+ * alphabetical), untagged posts last, newest first within each. Tags match
+ * regardless of case, so "docker" and "Docker" end up together. */
+function groupByTag(list: Article[]): TagGroup[] {
+  const groups = new Map<string, TagGroup>()
+  for (const article of list) {
+    const tag = article.tag || UNTAGGED
+    const group = groups.get(tag.toLowerCase())
+    if (group) group.articles.push(article)
+    else groups.set(tag.toLowerCase(), { tag, articles: [article] })
+  }
+  return [...groups.values()].sort(
+    (a, b) =>
+      Number(a.tag === UNTAGGED) - Number(b.tag === UNTAGGED) ||
+      b.articles.length - a.articles.length ||
+      a.tag.localeCompare(b.tag),
+  )
+}
+
+export const articleGroups = groupByTag(articles)
 
 /** FNV-1a, used to turn a slug into a shuffle seed. */
 function hashSeed(text: string): number {

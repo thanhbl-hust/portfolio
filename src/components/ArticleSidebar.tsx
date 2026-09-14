@@ -1,33 +1,38 @@
 import { Link } from 'react-router-dom'
-import { articles } from '../content'
+import { articleGroups } from '../content'
 
 interface ArticleSidebarProps {
   currentSlug: string
   onNavigate?: () => void
 }
 
+/** Every post, grouped by tag as on the index, and laid out like the table of
+ * contents on the other side: the tags numbered along one rail, their posts
+ * nested under them, and the one being read lit up. */
 export function ArticleSidebar({ currentSlug, onNavigate }: ArticleSidebarProps) {
   return (
-    <nav className="article-sidebar__list" aria-label="All posts">
-      <h2 className="article-sidebar__heading">All Posts</h2>
-      <ul>
-        {articles.map((article) => (
-          <li key={article.slug}>
-            <Link
-              to={`/article/${article.slug}`}
-              onClick={onNavigate}
-              className={
-                article.slug === currentSlug
-                  ? 'article-sidebar__item article-sidebar__item--active'
-                  : 'article-sidebar__item'
-              }
-            >
-              {article.tag && <span className="tag-pill">{article.tag}</span>}
-              <span className="article-sidebar__title">{article.title}</span>
-            </Link>
+    <nav className="toc" aria-label="All posts">
+      <p className="toc__heading">All Posts</p>
+      <ol className="toc__list">
+        {articleGroups.map((group) => (
+          <li key={group.tag}>
+            <span className="toc__group">{group.tag}</span>
+            <ol className="toc__list">
+              {group.articles.map((article) => (
+                <li key={article.slug}>
+                  <Link
+                    to={`/article/${article.slug}`}
+                    onClick={onNavigate}
+                    aria-current={article.slug === currentSlug ? 'page' : undefined}
+                  >
+                    {article.title}
+                  </Link>
+                </li>
+              ))}
+            </ol>
           </li>
         ))}
-      </ul>
+      </ol>
     </nav>
   )
 }

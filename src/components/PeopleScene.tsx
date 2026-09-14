@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Outlines, RoundedBox } from '@react-three/drei'
-import { Color, DirectionalLight, Group, Object3D, Quaternion, Vector3 } from 'three'
+import { Color, DirectionalLight, Group, Object3D, Quaternion, Vector3, WebGLRenderer } from 'three'
+import type { WebGLRendererParameters } from 'three'
 
 import { useIsDarkTheme } from '../hooks/useIsDarkTheme'
+import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion'
+import { useStaticBatch } from '../hooks/useStaticBatch'
 
 const OUTLINE_COLOR = '#15130f'
 
@@ -105,6 +108,9 @@ function ballPositionAt(t: number, c: RallyConfig): { x: number; y: number; z: n
 }
 
 function PickleballCourt({ night }: { night: boolean }) {
+  const courtRef = useRef<Group>(null)
+  // The court's colours follow the theme, so its batch is rebuilt with them.
+  useStaticBatch(courtRef, [], [night])
   const surfaceColor = night ? COURT_NIGHT_SURFACE : COURT_DAY_SURFACE
   const kitchenColor = night ? COURT_NIGHT_KITCHEN : COURT_DAY_KITCHEN
   const nearBaseline = COURT_NET_Z + COURT_HALF_LENGTH
@@ -114,7 +120,7 @@ function PickleballCourt({ night }: { night: boolean }) {
   const courtWidth = COURT_HALF_WIDTH * 2
 
   return (
-    <group>
+    <group ref={courtRef}>
       {/* court surface */}
       <mesh position={[0, 0, COURT_NET_Z]} receiveShadow>
         <boxGeometry args={[courtWidth, 0.05, COURT_HALF_LENGTH * 2]} />
@@ -307,7 +313,7 @@ function Pickleball({ position }: { position: [number, number, number] }) {
       })
     }
     return points
-  }, [])
+  }, [radius])
 
   return (
     <group position={position}>
@@ -345,28 +351,27 @@ function PickleballPaddle({
   return (
     <group position={position} rotation={rotation}>
       {/* butt cap */}
-      <mesh position={[0, 0.015, 0]} castShadow>
+      <mesh position={[0, 0.015, 0]}>
         <sphereGeometry args={[0.032, 12, 12]} />
         <meshStandardMaterial color={gripColor} />
       </mesh>
 
       {/* handle */}
-      <mesh position={[0, 0.115, 0]} castShadow>
+      <mesh position={[0, 0.115, 0]}>
         <cylinderGeometry args={[0.036, 0.04, 0.2, 16]} />
         <meshStandardMaterial color={gripColor} roughness={0.85} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.003} />
       </mesh>
 
       {/* grip wrap rings */}
       {[0.06, 0.115, 0.17].map((y) => (
-        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.04, 0.007, 8, 16]} />
           <meshStandardMaterial color="#3a3a3a" />
         </mesh>
       ))}
 
       {/* throat / neck */}
-      <mesh position={[0, 0.24, 0]} castShadow>
+      <mesh position={[0, 0.24, 0]}>
         <cylinderGeometry args={[0.05, 0.038, 0.05, 16]} />
         <meshStandardMaterial color={guardColor} />
       </mesh>
@@ -380,9 +385,8 @@ function PickleballPaddle({
       {/* paddle face - proud of the bumper on both sides */}
       <RoundedBox args={[0.29, 0.36, 0.026]} radius={0.03} smoothness={4} position={[0, 0.475, 0.025]} castShadow>
         <meshStandardMaterial color={faceColor} roughness={0.6} />
-        <Outlines color={OUTLINE_COLOR} thickness={0.002} />
       </RoundedBox>
-      <RoundedBox args={[0.29, 0.36, 0.026]} radius={0.03} smoothness={4} position={[0, 0.475, -0.025]} castShadow>
+      <RoundedBox args={[0.29, 0.36, 0.026]} radius={0.03} smoothness={4} position={[0, 0.475, -0.025]}>
         <meshStandardMaterial color={faceColor} roughness={0.6} />
       </RoundedBox>
 
@@ -405,6 +409,8 @@ function PickleballPaddle({
 
 function RallyingBall({ config }: { config: RallyConfig }) {
   const groupRef = useRef<Group>(null)
+  // The 26 dimples ride on the ball: one draw call instead of 26.
+  useStaticBatch(groupRef, [], [])
 
   useFrame(({ clock }) => {
     const group = groupRef.current
@@ -588,8 +594,13 @@ function BlockyPerson({
   const freeArmRef = useRef<Group>(null)
   const legFrontRef = useRef<Group>(null)
   const legBackRef = useRef<Group>(null)
+  const outerRef = useRef<Group>(null)
+  // Each moving part's blocks collapse into a handful of draw calls (see
+  // useStaticBatch); the anchors are exactly the groups useFrame animates.
+  useStaticBatch(outerRef, [rootRef, legFrontRef, legBackRef, torsoRef, headRef, paddleArmRef, freeArmRef], [])
 
-  const idleSeed = useMemo(() => Math.random() * Math.PI * 2, [])
+  // A different phase for each player, so the two don't bob in step.
+  const idleSeed = isFemale ? Math.PI * 0.8 : 0
   const build = isFemale ? FEMALE_BUILD : MALE_BUILD
 
   const palette = useMemo(
@@ -716,7 +727,7 @@ function BlockyPerson({
           </>
         )}
         {/* knee */}
-        <mesh position={[0, -0.29, 0.005]} castShadow>
+        <mesh position={[0, -0.29, 0.005]}>
           <boxGeometry args={[w - 0.03, 0.07, w + 0.025]} />
           <meshStandardMaterial color={skinShade} />
         </mesh>
@@ -732,10 +743,9 @@ function BlockyPerson({
           <meshStandardMaterial color={skinShade} />
         </mesh>
         {/* sock */}
-        <mesh position={[0, -0.585, 0]} castShadow>
+        <mesh position={[0, -0.585, 0]}>
           <boxGeometry args={[w - 0.012, 0.12, w + 0.022]} />
           <meshStandardMaterial color={sockColor} />
-          <Outlines color={OUTLINE_COLOR} thickness={0.004} />
         </mesh>
         {[-0.552, -0.592].map((y) => (
           <mesh key={y} position={[0, y, 0]}>
@@ -767,7 +777,7 @@ function BlockyPerson({
           </mesh>
         ))}
         {/* midsole */}
-        <mesh position={[0, -0.714, footZ]} castShadow>
+        <mesh position={[0, -0.714, footZ]}>
           <boxGeometry args={[w + 0.032, 0.038, footDepth + 0.012]} />
           <meshStandardMaterial color={sockColor} />
         </mesh>
@@ -791,7 +801,6 @@ function BlockyPerson({
         <mesh position={[0, -0.03, 0]} castShadow>
           <boxGeometry args={[w + 0.05, 0.15, w + 0.05]} />
           <meshStandardMaterial color={sleeveless ? skin : palette.shirt} />
-          <Outlines color={OUTLINE_COLOR} thickness={0.005} />
         </mesh>
         {sleeveless && (
           <mesh position={[0, 0.015, 0]}>
@@ -824,7 +833,7 @@ function BlockyPerson({
           <Outlines color={OUTLINE_COLOR} thickness={0.005} />
         </mesh>
         {/* wristband */}
-        <mesh position={[0, -0.625, 0]} castShadow>
+        <mesh position={[0, -0.625, 0]}>
           <boxGeometry args={[w - 0.012, 0.075, w - 0.012]} />
           <meshStandardMaterial color={holding ? sockColor : palette.shirt} />
         </mesh>
@@ -833,10 +842,9 @@ function BlockyPerson({
           <meshStandardMaterial color={holding ? palette.shirt : palette.shirtLight} />
         </mesh>
         {/* hand */}
-        <mesh position={[0, -0.71, 0.01]} castShadow>
+        <mesh position={[0, -0.71, 0.01]}>
           <boxGeometry args={[w - 0.035, 0.14, w + 0.015]} />
           <meshStandardMaterial color={skin} />
-          <Outlines color={OUTLINE_COLOR} thickness={0.004} />
         </mesh>
         {/* thumb */}
         <mesh position={[0, -0.674, 0.077]}>
@@ -848,7 +856,7 @@ function BlockyPerson({
   }
 
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
+    <group ref={outerRef} position={position} rotation={[0, rotationY, 0]}>
       <group ref={rootRef}>
         {/* legs pivot at the hips */}
         <group ref={legFrontRef} position={[build.hipHalf, HIP_Y, 0]}>
@@ -889,7 +897,7 @@ function BlockyPerson({
           {isFemale && (
             <>
               {/* the top's shaped front */}
-              <mesh position={[0, CHEST_Y + 0.02, build.chestDepth / 2 - 0.035]} castShadow>
+              <mesh position={[0, CHEST_Y + 0.02, build.chestDepth / 2 - 0.035]}>
                 <boxGeometry args={[build.chestWidth - 0.2, 0.13, 0.1]} />
                 <meshStandardMaterial color={lighten(outfit, 0.1)} />
               </mesh>
@@ -911,7 +919,7 @@ function BlockyPerson({
             <meshStandardMaterial color={isFemale ? sockColor : palette.bottomLight} />
           </mesh>
           {/* collar */}
-          <mesh position={[0, COLLAR_Y, 0]} castShadow>
+          <mesh position={[0, COLLAR_Y, 0]}>
             <boxGeometry args={[isFemale ? 0.36 : 0.44, 0.06, isFemale ? 0.28 : 0.32]} />
             <meshStandardMaterial color={isFemale ? palette.shirtShade : palette.bottom} />
           </mesh>
@@ -920,10 +928,9 @@ function BlockyPerson({
             /* pleated skirt, hung from the hips so it stays put while the legs
              * swing underneath it */
             <group position={[0, HIPS_Y - 0.06, 0]}>
-              <mesh position={[0, 0.02, 0]} castShadow>
+              <mesh position={[0, 0.02, 0]}>
                 <boxGeometry args={[build.hipsWidth + 0.02, 0.07, build.hipsDepth + 0.02]} />
                 <meshStandardMaterial color={palette.shirt} />
-                <Outlines color={OUTLINE_COLOR} thickness={0.005} />
               </mesh>
               <mesh position={[0, -0.13, 0]} castShadow>
                 <boxGeometry args={[build.hipsWidth + 0.05, 0.24, build.hipsDepth + 0.05]} />
@@ -934,7 +941,6 @@ function BlockyPerson({
               <mesh position={[0, -0.265, 0]} castShadow>
                 <boxGeometry args={[build.hipsWidth + 0.1, 0.05, build.hipsDepth + 0.1]} />
                 <meshStandardMaterial color={palette.bottomShade} />
-                <Outlines color={OUTLINE_COLOR} thickness={0.005} />
               </mesh>
               {/* pleats, front and back */}
               {[-0.21, -0.07, 0.07, 0.21].map((x) =>
@@ -954,7 +960,7 @@ function BlockyPerson({
           {/* head pivots at the neck and tracks the ball */}
           <group ref={headRef} position={[0, NECK_Y - HIP_Y, 0]}>
             {/* neck */}
-            <mesh position={[0, 0.01, 0]} castShadow>
+            <mesh position={[0, 0.01, 0]}>
               <boxGeometry args={[isFemale ? 0.17 : 0.2, 0.14, isFemale ? 0.17 : 0.2]} />
               <meshStandardMaterial color={skinShade} />
             </mesh>
@@ -973,7 +979,7 @@ function BlockyPerson({
             </mesh>
             {/* ears */}
             {[1, -1].map((side) => (
-              <mesh key={side} position={[(hw / 2 + 0.02) * side, 0.29, -0.02]} castShadow>
+              <mesh key={side} position={[(hw / 2 + 0.02) * side, 0.29, -0.02]}>
                 <boxGeometry args={[0.055, 0.13, 0.11]} />
                 <meshStandardMaterial color={skinShade} />
               </mesh>
@@ -1003,11 +1009,11 @@ function BlockyPerson({
             {isFemale ? (
               <>
                 {/* side-parted fringe: two blocks of different width */}
-                <mesh position={[-0.1, 0.472, faceZ - 0.04]} castShadow>
+                <mesh position={[-0.1, 0.472, faceZ - 0.04]}>
                   <boxGeometry args={[0.29, 0.11, 0.1]} />
                   <meshStandardMaterial color={hair} />
                 </mesh>
-                <mesh position={[0.165, 0.482, faceZ - 0.04]} castShadow>
+                <mesh position={[0.165, 0.482, faceZ - 0.04]}>
                   <boxGeometry args={[0.2, 0.09, 0.1]} />
                   <meshStandardMaterial color={palette.hairLight} />
                 </mesh>
@@ -1020,10 +1026,9 @@ function BlockyPerson({
                   * falling past them */}
                 {[1, -1].map((side) => (
                   <group key={side}>
-                    <mesh position={[(hw / 2 + 0.03) * side, 0.395, -0.04]} castShadow>
+                    <mesh position={[(hw / 2 + 0.03) * side, 0.395, -0.04]}>
                       <boxGeometry args={[0.06, 0.25, hw - 0.1]} />
                       <meshStandardMaterial color={hair} />
-                      <Outlines color={OUTLINE_COLOR} thickness={0.004} />
                     </mesh>
                     {/* the tapered tip of the bob */}
                     <mesh position={[(hw / 2 + 0.03) * side, 0.262, -0.07]}>
@@ -1033,10 +1038,9 @@ function BlockyPerson({
                   </group>
                 ))}
                 {/* back of the hair, cut short into the nape */}
-                <mesh position={[0, 0.395, -(hw / 2 + 0.05)]} castShadow>
+                <mesh position={[0, 0.395, -(hw / 2 + 0.05)]}>
                   <boxGeometry args={[hw + 0.02, 0.25, 0.11]} />
                   <meshStandardMaterial color={hair} />
-                  <Outlines color={OUTLINE_COLOR} thickness={0.005} />
                 </mesh>
                 <mesh position={[0, 0.268, -(hw / 2 + 0.04)]}>
                   <boxGeometry args={[hw - 0.08, 0.07, 0.09]} />
@@ -1198,11 +1202,43 @@ const RALLY: RallyConfig = {
   cycleSeconds: RALLY_CYCLE_SECONDS,
 }
 
+/** Reports once the scene has actually drawn, so the canvas can fade in over a
+ * finished frame rather than pop into its empty slot. */
+function RevealWhenDrawn({ onDrawn }: { onDrawn: () => void }) {
+  const drawn = useRef(false)
+  useFrame(() => {
+    if (drawn.current) return
+    drawn.current = true
+    // The frame being drawn now is on screen by the next one. (Waiting for a
+    // second useFrame instead never ends when nothing asks for another frame,
+    // as with reduced motion.)
+    requestAnimationFrame(() => onDrawn())
+  })
+  return null
+}
+
+/** With frameloop "demand" nothing is drawn until something asks. Coming back on
+ * screen nothing has - and if the theme changed meanwhile, the canvas would
+ * keep the old lighting - so ask for a frame. */
+function DrawOnDemandStart() {
+  const frameloop = useThree((state) => state.frameloop)
+  const invalidate = useThree((state) => state.invalidate)
+  useEffect(() => {
+    if (frameloop === 'demand') invalidate()
+  }, [frameloop, invalidate])
+  return null
+}
+
 export function PeopleScene() {
   // Dark theme puts the match under floodlights; light theme keeps daylight.
   const night = useIsDarkTheme()
+  const reduceMotion = usePrefersReducedMotion()
   const hostRef = useRef<HTMLDivElement>(null)
   const [onScreen, setOnScreen] = useState(true)
+  const [drawn, setDrawn] = useState(false)
+  const [failed, setFailed] = useState(false)
+  // With reduced motion the rally holds still and only redraws when dragged.
+  const frameloop = !onScreen ? 'never' : reduceMotion ? 'demand' : 'always'
 
   // The rally animates every frame, which would keep a core busy the whole
   // time the reader is further down the page. Stop the loop once it scrolls
@@ -1217,15 +1253,31 @@ export function PeopleScene() {
     return () => observer.disconnect()
   }, [])
 
+  // Our own renderer rather than R3F's, only so a failure to create one can be
+  // seen: R3F reports it as an unhandled rejection, not to the error boundary.
+  const createRenderer = (defaults: WebGLRendererParameters) => {
+    try {
+      return new WebGLRenderer({ ...defaults, alpha: true, antialias: true })
+    } catch (error) {
+      // No WebGL here (hardware acceleration off, a blocklisted GPU, some
+      // managed browsers): take the scene out rather than leave an empty box.
+      setFailed(true)
+      throw error
+    }
+  }
+
+  if (failed) return null
+
   return (
-    <div className="scene3d" ref={hostRef}>
+    <div className={`scene3d${drawn ? ' scene3d--drawn' : ''}`} ref={hostRef}>
       <Canvas
-        frameloop={onScreen ? 'always' : 'never'}
+        frameloop={frameloop}
         shadows="soft"
         dpr={[1, 2]}
         camera={{ position: [3.2, 4.6, 10.5], fov: 50 }}
-        gl={{ alpha: true, antialias: true }}
+        gl={createRenderer}
       >
+        <RevealWhenDrawn onDrawn={() => setDrawn(true)} />
         {night ? <NightLighting /> : <DayLighting />}
 
         <PickleballCourt night={night} />
@@ -1276,9 +1328,11 @@ export function PeopleScene() {
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2 - 0.16}
           target={[0, 0.8, -1.5]}
-          autoRotate
+          autoRotate={!reduceMotion}
           autoRotateSpeed={0.8}
         />
+
+        <DrawOnDemandStart />
       </Canvas>
     </div>
   )

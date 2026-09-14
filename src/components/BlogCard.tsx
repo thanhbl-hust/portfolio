@@ -1,26 +1,26 @@
 import { Link } from 'react-router-dom'
+import { formatDate } from '../content'
 import type { Article } from '../content'
-
-function formatDate(iso: string): string {
-  if (!iso) return ''
-  const date = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
 
 interface BlogCardProps {
   article: Article
+  /** Off where the tag is already given, as under a tag's heading. */
+  showTag?: boolean
 }
 
-export function BlogCard({ article }: BlogCardProps) {
+export function BlogCard({ article, showTag = true }: BlogCardProps) {
   return (
     <Link to={`/article/${article.slug}`} className="blog-card">
       <div className="blog-card__meta">
         {article.date && <span className="blog-card__date">{formatDate(article.date)}</span>}
-        {article.tag && <span className="tag-pill">{article.tag}</span>}
+        {showTag && article.tag && <span className="tag-pill">{article.tag}</span>}
       </div>
       <h2 className="blog-card__title">{article.title}</h2>
-      {article.excerpt && <p className="blog-card__excerpt">{article.excerpt}</p>}
+      {article.excerpt && (
+        <p className="blog-card__excerpt" lang={article.lang}>
+          {article.excerpt}
+        </p>
+      )}
     </Link>
   )
 }

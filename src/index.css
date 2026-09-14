@@ -1,25 +1,29 @@
 :root {
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
 
-  --color-bg: #f6f9fc;
-  --color-bg-raised: #eaf0f7;
+  /* A soft blue page rather than near-white, which glared; cards and code
+     blocks sit a step lighter than it. Every text colour below keeps 4.5:1 or
+     better on both. */
+  --color-bg: #dbe6f3;
+  --color-bg-raised: #e8eff8;
   --color-ink: #182430;
   --color-ink-soft: #4c5a6b;
-  --color-border: #d2dde9;
+  --color-border: #c2d2e5;
   --color-accent: #1d5fae;
-  --color-accent-soft: #d9e6f7;
+  --color-accent-soft: #cfdff3;
   --color-quote-bar: #7ba3d0;
-  --color-syntax-string: #8a6524;
+  --color-syntax-string: #7d5a1d;
   --color-code-bg: var(--color-bg-raised);
   --color-code-fg: var(--color-ink);
-  --color-syntax-keyword: #8250df;
-  --color-syntax-number: #3f7d4a;
+  --color-syntax-keyword: #7443cf;
+  --color-syntax-number: #356d3f;
   --model-glow: rgba(29, 95, 174, 0.34);
   --model-glow-soft: rgba(29, 95, 174, 0.16);
-  /* The floating bottom nav gets surfaces of its own: it used to share
-     --color-bg-raised with blog cards and code blocks, and vanished over them. */
-  --nav-surface: rgba(255, 255, 255, 0.78);
-  --nav-border: #7fa4d1;
+  /* The floating controls (bottom nav, top-right buttons, back-to-top) get
+     surfaces of their own: they used to share --color-bg-raised with blog
+     cards and code blocks, and all but vanished against them - 1.09:1. */
+  --nav-surface: rgba(242, 246, 251, 0.82);
+  --nav-border: #6f97c8;
   --nav-hover: rgba(29, 95, 174, 0.1);
   --nav-shadow: 0 10px 30px rgba(15, 35, 70, 0.18), 0 2px 8px rgba(15, 35, 70, 0.1);
 
@@ -76,6 +80,13 @@ html {
  * drawer, never the article behind it. */
 html.scroll-locked {
   overflow: hidden;
+}
+
+/* Switching theme cross-fades the whole page, the 3D scene included - see
+ * ThemeToggle, which runs the switch inside a view transition. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
 }
 
 body {
@@ -160,12 +171,25 @@ a:hover {
   z-index: 25;
 }
 
-.brand {
+/* One fixed strip for the whole header: the brand on the left, the controls
+ * (and the article page's Blogs button, via HeaderSlot) on the right. When they
+ * run out of room the brand name gives way with an ellipsis, so neither a
+ * longer brand nor another icon can make the two sides overlap. */
+.site-header {
   position: fixed;
   top: 1rem;
   left: 1rem;
+  right: 1rem;
   z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 0.4rem;
   color: var(--color-ink);
@@ -179,7 +203,14 @@ a:hover {
 }
 
 .brand__icon {
+  flex-shrink: 0;
   color: var(--color-accent);
+}
+
+.brand__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .topnav {
@@ -191,8 +222,8 @@ a:hover {
   align-items: center;
   gap: 0.75rem;
   padding: 0.4rem 0.9rem;
-  /* Frosted rather than just a different shade: in the light theme even pure
-     white is only 1.06:1 against the page, so what keeps the nav legible over
+  /* Frosted rather than just a different shade: in the light theme the surface
+     is barely lighter than the page (~1.1:1), so what keeps the nav legible over
      a card or a code block is the blur of whatever is behind it. */
   background: var(--nav-surface);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
@@ -204,13 +235,16 @@ a:hover {
 }
 
 .top-controls {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 30;
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.6rem;
+}
+
+/* display: contents lets whatever a page portals in sit in the row as if it
+ * were written there - and an empty slot adds no gap. */
+.top-controls__slot {
+  display: contents;
 }
 
 .icon-link {
@@ -220,8 +254,8 @@ a:hover {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
+  background: var(--nav-surface);
+  border: 1px solid var(--nav-border);
   color: var(--color-ink-soft);
   transition: border-color 0.15s ease, color 0.15s ease;
 }
@@ -247,8 +281,8 @@ a:hover {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
+  background: var(--nav-surface);
+  border: 1px solid var(--nav-border);
   border-radius: 50%;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   color: var(--color-ink-soft);
@@ -257,6 +291,8 @@ a:hover {
   transform: translateY(8px);
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease, color 0.15s ease, border-color 0.15s ease;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
 }
 
 .back-to-top--visible {
@@ -322,8 +358,8 @@ a:hover {
   width: 52px;
   height: 28px;
   padding: 0 5px;
-  background: var(--color-bg-raised);
-  border: 1px solid var(--color-border);
+  background: var(--nav-surface);
+  border: 1px solid var(--nav-border);
   border-radius: 999px;
   cursor: pointer;
 }
@@ -397,16 +433,10 @@ a:hover {
 /* ---------- article sidebar (all posts, while reading) ---------- */
 
 .blogs-toggle {
-  position: fixed;
-  top: 1rem;
-  /* Parked just left of .top-controls, whose width is set by the icon row -
-     adding an icon there means widening this offset too. */
-  right: 13.5rem;
-  z-index: 30;
   padding: 0.4rem 1rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--nav-border);
   border-radius: 999px;
-  background: var(--color-bg-raised);
+  background: var(--nav-surface);
   color: var(--color-ink);
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -414,6 +444,8 @@ a:hover {
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   transition: border-color 0.15s ease, color 0.15s ease;
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
 }
 
 .blogs-toggle:hover {
@@ -448,53 +480,6 @@ a:hover {
   margin: 0 0 1.75rem;
   padding: 0 0 1.5rem;
   border-bottom: 1px solid var(--color-border);
-}
-
-.article-sidebar__heading {
-  margin: 0 0 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-ink-soft);
-}
-
-.article-sidebar__list ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.article-sidebar__item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  text-decoration: none;
-  color: var(--color-ink-soft);
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.article-sidebar__item:hover {
-  background: var(--color-accent-soft);
-  color: var(--color-ink);
-}
-
-.article-sidebar__item--active {
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-  color: var(--color-ink);
-}
-
-.article-sidebar__title {
-  font-size: 0.85rem;
-  line-height: 1.4;
 }
 
 .article-drawer-backdrop {
@@ -752,8 +737,20 @@ a:hover {
   filter: drop-shadow(0 0 12px var(--model-glow)) drop-shadow(0 0 30px var(--model-glow-soft));
 }
 
+/* The canvas fades in over its first finished frame (PeopleScene marks the host
+ * --drawn) instead of popping into the reserved slot. */
+.scene3d canvas {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.scene3d--drawn canvas {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .scene3d {
+  .scene3d,
+  .scene3d canvas {
     transition: none;
   }
 }
@@ -1014,6 +1011,14 @@ a:hover {
   border-radius: 4px;
 }
 
+/* Code blocks and tables that scroll sideways take focus (useKeyboardScrollable),
+ * so the arrow keys can scroll them. */
+.article__body pre:focus-visible,
+.table-scroll:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 .article__body table {
   border-collapse: collapse;
   width: 100%;
@@ -1088,7 +1093,20 @@ a:hover {
   font-size: 0.78rem;
 }
 
-.toc__list > li > a::before {
+/* A tag in the All Posts list (ArticleSidebar): a top-level entry on the rail
+ * like a section in the contents, but a label over its posts, not a link. */
+.toc__group {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.8rem;
+  border-left: 2px solid var(--color-border);
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.toc__list > li > a::before,
+.toc__list > li > .toc__group::before {
   content: counters(toc-counter, '.') '. ';
 }
 
@@ -1100,9 +1118,11 @@ a:hover {
   color: var(--color-ink);
 }
 
-/* The section on screen right now (see useActiveHeading). The font is
- * monospaced at every weight, so going bold never re-wraps the entry. */
-.toc a[aria-current='location'] {
+/* The section on screen right now (see useActiveHeading) - or, in All Posts,
+ * the post being read. The font is monospaced at every weight, so going bold
+ * never re-wraps the entry. */
+.toc a[aria-current='location'],
+.toc a[aria-current='page'] {
   border-left-color: var(--color-accent);
   color: var(--color-accent);
   font-weight: 600;
@@ -1116,26 +1136,68 @@ a:hover {
   gap: 1.25rem;
 }
 
-/* The blog index lays its cards out as a grid that wraps left to right, as many
- * columns as fit (auto-fill), newest first. The min() keeps a card from
- * overflowing a screen narrower than the minimum column. */
+/* The blog index: a section per tag, each laying its cards out as a grid that
+ * wraps left to right, as many columns as fit, newest first. The min() keeps a
+ * card from overflowing a screen narrower than the minimum column; auto-fill
+ * (not auto-fit) keeps the empty columns, so a tag with a single post still
+ * gets a card as wide as everyone else's. */
 .blog-list--grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
-  /* Every row as tall as the tallest card anywhere in the grid, not just in its
-   * own row - so all the cards come out the same size. */
   grid-auto-rows: 1fr;
 }
 
 /* The index is the one page without side rails, so it takes the width a grid
  * of cards needs; every other page keeps the narrow reading column. Without
  * :has() it simply stays at that column's width, with two cards a row. */
-.content:has(> .blog-list--grid) {
+.content:has(> .blog-groups) {
   max-width: 1080px;
 }
 
-/* Cards in a grid row all grow to the tallest one, so a long summary stretched
- * its neighbours with it. Three lines is plenty for a teaser. */
+.blog-group + .blog-group {
+  margin-top: 3rem;
+}
+
+/* The tag, its post count, then a rule running out to the edge. */
+.blog-group__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.blog-group__title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.blog-group__count {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* Titles and summaries are clamped to three lines each, so a card can only get
+ * so tall - and on the index every card is exactly that tall: padding and
+ * border, the date line and its gap, three title lines and their gap, three
+ * summary lines. That keeps the cards one size across the tag sections, not
+ * just within one grid, which is all grid-auto-rows can do. */
+.blog-list--grid .blog-card {
+  --title-line: calc(1.25rem * 1.7);
+  --summary-line: calc(1em * 1.6);
+  min-height: calc(
+    2 * var(--card-pad-y) + 2px + 1.5rem + 0.5rem + 3 * var(--title-line) + 0.5rem + 3 * var(--summary-line)
+  );
+}
+
+.blog-list--grid .blog-card__title,
 .blog-list--grid .blog-card__excerpt {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -1144,9 +1206,18 @@ a:hover {
   overflow: hidden;
 }
 
+.blog-list--grid .blog-card__title {
+  line-height: var(--title-line);
+}
+
+.blog-list--grid .blog-card__excerpt {
+  line-height: var(--summary-line);
+}
+
 .blog-card {
+  --card-pad-y: 1.5rem;
   display: block;
-  padding: 1.5rem 1.75rem;
+  padding: var(--card-pad-y) 1.75rem;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg-raised);
@@ -1263,26 +1334,45 @@ a:hover {
   color: var(--color-ink-soft);
 }
 
-/* ---------- scroll reveal ---------- */
-
-.article__body > *,
-.blog-list > * {
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+/* The error page's Reload, dressed as the links beside it. */
+.notfound__retry {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.article__body > *.reveal-visible,
-.blog-list > *.reveal-visible {
-  opacity: 1;
-  transform: translateY(0);
+/* ---------- scroll reveal ---------- */
+
+/* Opt-in: the container carries .reveal-group and runs useRevealChildren, which
+ * marks each child .reveal-visible as it scrolls into view. (It was keyed to
+ * .blog-list, and the "More to Read" list never ran the hook, so its cards
+ * stayed invisible.) The slide is `translate`, not `transform`, so it doesn't
+ * cancel a child's own transform - the lift of a card on hover. */
+.reveal-group > * {
+  transition: opacity 0.6s ease, translate 0.6s ease;
+}
+
+.reveal-group > :not(.reveal-visible) {
+  opacity: 0;
+  translate: 0 18px;
+}
+
+/* A card's quick hover transitions, alongside the reveal's. */
+.reveal-group > .blog-card {
+  transition: opacity 0.6s ease, translate 0.6s ease, border-color 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .article__body > *,
-  .blog-list > * {
+  .reveal-group > *,
+  .reveal-group > :not(.reveal-visible) {
     opacity: 1;
-    transform: none;
+    translate: none;
     transition: none;
   }
 }
@@ -1290,10 +1380,10 @@ a:hover {
 /* Nothing has scrolled into view on a printed page, so without this the reveal
  * would send most of the article to the printer as blank space. */
 @media print {
-  .article__body > *,
-  .blog-list > * {
+  .reveal-group > *,
+  .reveal-group > :not(.reveal-visible) {
     opacity: 1;
-    transform: none;
+    translate: none;
     transition: none;
   }
 }
@@ -1310,8 +1400,8 @@ a:hover {
 }
 
 @media (max-width: 860px) {
-  /* Brand, Blogs button and the icon row all share one fixed strip; on a phone
-     they only fit if the icons and the button both give up a little width. */
+  /* On a phone the control row only fits beside the brand if the icons and
+     the Blogs button both give up a little width. */
   .top-controls {
     gap: 0.4rem;
   }
@@ -1327,7 +1417,6 @@ a:hover {
   }
 
   .blogs-toggle {
-    right: 11.5rem;
     padding: 0.35rem 0.75rem;
     font-size: 0.8rem;
   }
@@ -1364,10 +1453,28 @@ a:hover {
   }
 
   .blog-card {
-    padding: 1.25rem 1.4rem;
+    --card-pad-y: 1.25rem;
+    padding: var(--card-pad-y) 1.4rem;
+  }
+
+  .blog-group__title {
+    font-size: 1.2rem;
   }
 
   body {
     font-size: 15px;
+  }
+}
+
+/* On the narrowest phones even the </> mark needs the header to tighten up. */
+@media (max-width: 360px) {
+  .site-header {
+    left: 0.75rem;
+    right: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .top-controls {
+    gap: 0.3rem;
   }
 }

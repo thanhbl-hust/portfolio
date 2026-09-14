@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 
 type Theme = 'light' | 'dark'
 
@@ -19,13 +20,29 @@ export function ThemeToggle() {
     }
   }, [theme])
 
+  function toggle() {
+    const next: Theme = isDark ? 'light' : 'dark'
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!('startViewTransition' in document) || reduceMotion) {
+      setTheme(next)
+      return
+    }
+    // Cross-fade the whole page, 3D scene included. The browser snapshots the
+    // old look first; the attribute flips inside the callback, so by the time
+    // the callback returns the page is already in the new colours.
+    document.startViewTransition(() => {
+      document.documentElement.setAttribute('data-theme', next)
+      flushSync(() => setTheme(next))
+    })
+  }
+
   return (
     <button
       type="button"
       role="switch"
       aria-checked={isDark}
       className="theme-toggle"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onClick={toggle}
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
     >
       <svg className="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true">

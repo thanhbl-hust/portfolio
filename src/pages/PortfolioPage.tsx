@@ -2,6 +2,7 @@ import { Suspense, lazy, useRef } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useRevealChildren } from '../hooks/useRevealChildren'
 import { AboutTerminal } from '../components/AboutTerminal'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 // three.js and its helpers are the bulk of the bundle and nothing but this
 // scene uses them, so they load after the page is already on screen.
@@ -20,14 +21,19 @@ export function PortfolioPage() {
         * without changing the design. */}
       <h1 className="visually-hidden">Bui Lam Thanh &mdash; DevOps Engineer</h1>
 
-      {/* the fallback keeps the scene's 360px slot, so nothing jumps when it lands */}
-      <Suspense fallback={<div className="scene3d" />}>
-        <PeopleScene />
-      </Suspense>
+      {/* If the scene fails - its chunk won't load, or it throws - the boundary
+        * takes out the scene rather than the whole page. (No WebGL is handled
+        * inside it.) The Suspense fallback keeps the scene's 360px slot, so
+        * nothing jumps when it lands. */}
+      <ErrorBoundary fallback={null}>
+        <Suspense fallback={<div className="scene3d" />}>
+          <PeopleScene />
+        </Suspense>
+      </ErrorBoundary>
 
       <AboutTerminal />
 
-      <div className="article__body" ref={bodyRef}>
+      <div className="article__body reveal-group" ref={bodyRef}>
         <h2 id="about">About Me</h2>
         <p>
           Replace this paragraph with a short introduction: who you are, what you work on day to
